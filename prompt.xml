@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt version="1.0" name="replication-tui-generator">
+
+  <!-- ============================================================
+       ROLE PROMPTING
+  ============================================================ -->
+  <role>
+    <persona>Você é um engenheiro de software sênior especialista em:</persona>
+    <expertise>
+      <item>Desenvolvimento de CLIs e TUIs com Node.js / Bun</item>
+      <item>A biblioteca Ink (React para terminal) — a mesma usada pelo opencode</item>
+      <item>Arquitetura de software orientada a configuração via JSON</item>
+      <item>Integração com APIs de LLMs (Google Generative AI / Gemini)</item>
+      <item>Prompt Engineering avançado</item>
+    </expertise>
+    <behavior>
+      Você pensa de forma estruturada, documenta cada decisão arquitetural,
+      e entrega código production-ready com tratamento de erros, tipagem forte
+      em TypeScript e separação clara de responsabilidades.
+    </behavior>
+  </role>
+
+  <!-- ============================================================
+       GENERATED KNOWLEDGE
+       (Conhecimento que o modelo deve ativar antes de responder)
+  ============================================================ -->
+  <generated_knowledge>
+    <instruction>
+      Antes de escrever qualquer código, recupere e consolide internamente
+      o seguinte conhecimento:
+    </instruction>
+    <knowledge_blocks>
+
+      <block id="K1" topic="Ink / React-for-CLI">
+        Ink usa componentes React renderizados no terminal.
+        Hooks relevantes: useInput, useApp, useFocus.
+        Componentes-chave: Box, Text, Static, Newline.
+        Libs complementares: ink-select-input, ink-text-input,
+        ink-spinner, ink-big-text, ink-gradient.
+        A navegação entre telas é feita via estado React (useState),
+        não via roteador — cada "tela" é um componente condicional.
+      </block>
+
+      <block id="K2" topic="Bun runtime">
+        Bun suporta TypeScript e JSX nativamente sem transpilação.
+        Acesso ao filesystem: Bun.file(), Bun.write(), fs nativo.
+        Shebang correto: #!/usr/bin/env bun
+        Execução: bun run src/index.tsx
+      </block>
+
+      <block id="K3" topic="Google Generative AI SDK">
+        SDK: @google/generative-ai
+        Inicialização: new GoogleGenerativeAI(apiKey)
+        Modelo recomendado: gemini-2.0-flash ou gemini-1.5-pro
+        Chamada: model.generateContent(prompt)
+        Resposta: result.response.text()
+      </block>
+
+      <block id="K4" topic="Arquitetura orientada a JSON">
+        Todos os textos de menu, labels, técnicas disponíveis,
+        configurações padrão e templates devem vir de arquivos JSON
+        em uma pasta /config. O app lê esses JSONs no boot.
+        Isso permite customização sem alterar código.
+      </block>
+
+      <block id="K5" topic="Técnicas de Prompt Engineering a implementar">
+        - Few-Shot: exemplos de entrada/saída no prompt
+        - Chain-of-Thought (CoT): instrução para raciocinar passo a passo
+        - Self-Consistency: gerar N variações e consolidar
+        - Tree of Thoughts (ToT): explorar múltiplos caminhos antes de decidir
+        - ReAct: ciclo Raciocinar → Agir → Observar
+        - Role Prompting: persona especialista
+        - Generated Knowledge: gerar contexto antes de responder
+        - Maieutic Prompting: o modelo explica e valida cada afirmação
+      </block>
+
+      <block id="K6" topic="Go-style Error Handling em TypeScript">
+        Em Go, erros são valores retornados explicitamente — nunca lançados:
+          data, err := doSomething()
+          if err != nil { return nil, err }
+
+        Em TypeScript, replicar esse padrão com um tipo Result:
+          type Ok&lt;T&gt;  = { ok: true;  value: T }
+          type Err&lt;E&gt; = { ok: false; error: E }
+          type Result&lt;T, E = Error&gt; = Ok&lt;T&gt; | Err&lt;E&gt;
+
+        Funções auxiliares obrigatórias em src/utils/result.ts:
+          function ok&lt;T&gt;(value: T): Ok&lt;T&gt;
+          function err&lt;E&gt;(error: E): Err&lt;E&gt;
+          async function tryAsync&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): Promise&lt;Result&lt;T&gt;&gt;
+
+        Regras de uso:
+        1. TODA função que pode falhar retorna Result&lt;T&gt; — NUNCA lança exceção
+        2. O chamador SEMPRE verifica result.ok antes de usar result.value
+        3. Erros são propagados explicitamente — NUNCA silenciados com catch vazio
+        4. Cada camada adiciona contexto ao erro: "FileService.read: " + originalError
+        5. try/catch é permitido APENAS dentro de tryAsync — nunca espalhado no código
+        6. Erros de UI (telas) exibem result.error.message de forma amigável ao usuário
+
+        Exemplo de uso no padrão Go-style:
+          const result = await GeminiService.generate(prompt)
+          if (!result.ok) {
+            setError(result.error.message) // exibe no terminal
+            return
+          }
+          const text = result.value // só acessa após checar ok
+      </block>
+
+    </knowledge_blocks>
+  </generated_knowledge>
+
+  <!-- ============================================================
+       FEW-SHOT EXAMPLES
+       (Exemplos de entrada → saída esperada)
+  ============================================================ -->
+  <few_shot_examples>
+
+    <example id="E1" label="Prompt simples gerado pelo app">
+      <input>
+        tarefa: "Criar um CRUD de usuários em NestJS"
+        formato: xml
+        tecnicas: [role_prompting, chain_of_thought, few_shot]
+        instrucao: "Gere o código completo com DTOs, Service e Controller"
+      </input>
+      <output>
+        Um arquivo XML salvo em ~/replication-prompts/crud-nestjs.xml
+        contendo: role de engenheiro backend, exemplos few-shot de CRUD,
+        instrução de CoT pedindo que o modelo pense camada por camada,
+        e a instrução final do usuário.
+      </output>
+    </example>
+
+    <example id="E2" label="Fluxo de configuração">
+      <input>
+        Usuário acessa menu "Configurações"
+      </input>
+      <output>
+        Tela exibe campos: GOOGLE_API_KEY (masked), pasta de saída,
+        modelo de IA preferido. Ao salvar, grava em ~/.replication/config.json
+      </output>
+    </example>
+
+    <example id="E3" label="Fluxo Gerar Contexto">
+      <input>
+        Usuário escolhe "Gerar Contexto", informa o caminho /home/user/meu-projeto
+      </input>
+      <output>
+        App lê recursivamente os arquivos (.ts, .tsx, .js, .json, .md),
+        monta um prompt de análise, envia para Gemini e salva o contexto
+        gerado em ~/replication-prompts/contexto-meu-projeto.md
+      </output>
+    </example>
+
+  </few_shot_examples>
+
+  <!-- ============================================================
+       CHAIN OF THOUGHT
+       (Instrução para o modelo raciocinar antes de codar)
+  ============================================================ -->
+  <chain_of_thought>
+    <instruction>
+      Antes de gerar qualquer arquivo de código, siga OBRIGATORIAMENTE
+      estas etapas de raciocínio e exiba cada uma:
+    </instruction>
+    <steps>
+      <step order="1">
+        ANÁLISE DE REQUISITOS: Liste todas as funcionalidades solicitadas
+        e classifique por: tela, serviço, arquivo de config ou utilitário.
+      </step>
+      <step order="2">
+        ESTRUTURA DE PASTAS: Defina a árvore de diretórios completa
+        antes de escrever qualquer código.
+      </step>
+      <step order="3">
+        FLUXO DE DADOS: Para cada tela/funcionalidade, descreva:
+        estado necessário → ações do usuário → efeitos colaterais.
+      </step>
+      <step order="4">
+        DEPENDÊNCIAS: Liste os pacotes npm/bun exatos com versões.
+      </step>
+      <step order="5">
+        ORDEM DE IMPLEMENTAÇÃO: Defina a sequência de arquivos a criar.
+        OBRIGATÓRIO iniciar por:
+        1. src/utils/result.ts (tipos Result e funções auxiliares)
+        2. src/utils/errors.ts (tipos de erro de domínio)
+        3. src/types/index.ts
+        4. config JSONs
+        5. serviços (cada um retornando Result&lt;T&gt;)
+        6. componentes/telas
+        7. src/index.tsx
+      </step>
+      <step order="6">
+        SÓ ENTÃO: Gere o código completo de cada arquivo,
+        na ordem definida no passo 5.
+      </step>
+    </steps>
+  </chain_of_thought>
+
+  <!-- ============================================================
+       TREE OF THOUGHTS
+       (Explorar abordagens antes de decidir)
+  ============================================================ -->
+  <tree_of_thoughts>
+    <instruction>
+      Para as decisões arquiteturais abaixo, explore 3 abordagens,
+      avalie prós/contras de cada uma e escolha a melhor justificando:
+    </instruction>
+    <decision_points>
+
+      <decision id="D1" question="Como gerenciar navegação entre telas?">
+        <branch id="B1">Estado único com enum de telas (useState + switch)</branch>
+        <branch id="B2">Stack de componentes empilhados (array de telas ativas)</branch>
+        <branch id="B3">Context API com reducer para navegação global</branch>
+        <evaluate>Qual tem menor complexidade para este escopo?</evaluate>
+      </decision>
+
+      <decision id="D2" question="Como ler config.json e menus.json?">
+        <branch id="B1">Leitura síncrona no boot com Bun.file().json()</branch>
+        <branch id="B2">Lazy loading sob demanda por tela</branch>
+        <branch id="B3">Singleton de config carregado uma vez em módulo ES</branch>
+        <evaluate>Qual garante consistência e performance no terminal?</evaluate>
+      </decision>
+
+      <decision id="D3" question="Como estruturar o prompt enviado para a IA?">
+        <branch id="B1">Template string hardcoded por técnica</branch>
+        <branch id="B2">Templates em JSON carregados dinamicamente por técnica selecionada</branch>
+        <branch id="B3">Composição funcional: cada técnica é uma função que recebe e retorna o prompt</branch>
+        <evaluate>Qual é mais extensível para adicionar novas técnicas?</evaluate>
+      </decision>
+
+    </decision_points>
+  </tree_of_thoughts>
+
+  <!-- ============================================================
+       SELF-CONSISTENCY
+       (Gerar múltiplas abordagens e consolidar a melhor)
+  ============================================================ -->
+  <self_consistency>
+    <instruction>
+      Para a estrutura de pastas do projeto e para o componente principal (App.tsx),
+      gere 3 versões distintas internamente. Então compare:
+      - Qual é mais legível?
+      - Qual é mais extensível?
+      - Qual segue melhor os padrões da comunidade Ink/React?
+      Entregue SOMENTE a versão vencedora, explicando em 2 linhas por que venceu.
+    </instruction>
+  </self_consistency>
+
+  <!-- ============================================================
+       ReAct — Reasoning + Acting
+       (Ciclo de raciocínio e ação para tarefas com múltiplos passos)
+  ============================================================ -->
+  <react_loop>
+    <instruction>
+      Para cada funcionalidade abaixo, execute o ciclo ReAct:
+      Thought → Action → Observation → (repita se necessário) → Final Answer
+    </instruction>
+    <tasks>
+
+      <task id="T1" name="Integração com Gemini">
+        <thought>O que preciso saber sobre o SDK antes de chamar a API?</thought>
+        <action>Consultar bloco de conhecimento K3 e montar o service de IA</action>
+        <observation>Verificar se o retorno está chegando em texto puro ou em blocos</observation>
+        <action>Tratar o response.text() e lidar com erros de quota/autenticação</action>
+        <final>Entregar GeminiService com método generatePrompt(userInput, techniques[])</final>
+      </task>
+
+      <task id="T2" name="Leitura de arquivos para Gerar Contexto">
+        <thought>Quais extensões são relevantes? Como evitar arquivos binários e node_modules?</thought>
+        <action>Montar função recursiva com allowlist de extensões e denylist de pastas</action>
+        <observation>Checar se o conteúdo total não excede o limite de tokens do Gemini (~1M)</observation>
+        <action>Se exceder, implementar chunking ou sumarização em etapas</action>
+        <final>Entregar ContextService com método readProjectFiles(path): string[]</final>
+      </task>
+
+    </tasks>
+  </react_loop>
+
+  <!-- ============================================================
+       MAIEUTIC PROMPTING
+       (O modelo valida cada afirmação do que vai construir)
+  ============================================================ -->
+  <maieutic_prompting>
+    <instruction>
+      Antes de finalizar a implementação, responda e valide cada afirmação:
+    </instruction>
+    <validations>
+      <validate claim="O app funciona sem internet para fluxos que não usam IA">
+        Justifique como os menus, leitura de prompts salvos e configurações
+        funcionam offline, e confirme que só os fluxos "Gerar" fazem chamadas de rede.
+      </validate>
+      <validate claim="Os JSONs de configuração são a única fonte de verdade para textos de UI">
+        Confirme que não há nenhum texto de label, menu item ou mensagem
+        hardcoded nos componentes .tsx — todos vêm de /config/*.json.
+      </validate>
+      <validate claim="Os prompts gerados são salvos atomicamente">
+        Confirme que o arquivo só é salvo no disco APÓS a IA retornar com sucesso,
+        evitando arquivos corrompidos ou vazios em caso de erro de rede.
+      </validate>
+      <validate claim="A API Key nunca é logada no terminal ou salva em texto visível">
+        Confirme o uso de campo masked no ink-text-input e que o config.json
+        fica em ~/.replication/ (diretório do usuário, não no projeto).
+      </validate>
+      <validate claim="O padrão Go-style de erros é aplicado em 100% dos serviços">
+        Confirme que nenhum serviço usa throw, try/catch avulso ou catch vazio.
+        Confirme que src/utils/result.ts existe e é importado por todos os serviços.
+        Confirme que cada serviço tem seu tipo de erro específico.
+        Confirme que componentes verificam result.ok antes de acessar result.value.
+        Execute mentalmente: grep -r "throw " src/services/ → deve retornar vazio.
+      </validate>
+    </validations>
+  </maieutic_prompting>
+
+  <!-- ============================================================
+       TAREFA PRINCIPAL
+  ============================================================ -->
+  <task>
+    <title>Criar o TUI "Replication" com Bun + Ink</title>
+
+    <project_structure>
+      <file path="package.json">Dependências: ink, ink-select-input, ink-text-input, ink-spinner, ink-big-text, @google/generative-ai, chalk, zod</file>
+      <file path="tsconfig.json">Config TS para Bun com JSX react-jsx</file>
+      <file path="src/index.tsx">Entry point com shebang bun, renderiza App</file>
+      <file path="src/App.tsx">Componente raiz com controle de navegação entre telas</file>
+      <file path="config/menus.json">Todos os itens de menu, labels e textos de UI</file>
+      <file path="config/techniques.json">Lista de técnicas de prompt engineering com id, nome, descrição e template</file>
+      <file path="config/formats.json">Formatos disponíveis (texto, markdown, xml) com descrição de vantagens</file>
+      <file path="config/templates/prompt.xml">Template XML base para geração de prompts</file>
+      <file path="config/templates/prompt.md">Template Markdown base para geração de prompts</file>
+      <file path="src/screens/MainMenu.tsx">Tela inicial com 5 opções</file>
+      <file path="src/screens/NewPrompt.tsx">Fluxo de criação em steps: tarefa → formato → técnicas → instrução → gerar</file>
+      <file path="src/screens/ViewPrompts.tsx">Lista prompts salvos na pasta configurada</file>
+      <file path="src/screens/Settings.tsx">Formulário de configuração (API Key, pasta, modelo)</file>
+      <file path="src/screens/GenerateContext.tsx">Input de pasta → lê arquivos → envia para IA → salva contexto</file>
+      <file path="src/screens/ProjectPattern.tsx">Analisa projeto e sugere padrões e boas práticas</file>
+      <file path="src/services/GeminiService.ts">Integração com Google Generative AI</file>
+      <file path="src/services/PromptBuilder.ts">Monta o XML/MD final baseado nas técnicas selecionadas</file>
+      <file path="src/services/FileService.ts">Leitura/escrita de arquivos e prompts salvos</file>
+      <file path="src/services/ContextService.ts">Lê recursivamente arquivos do projeto para análise</file>
+      <file path="src/services/ConfigService.ts">Lê e salva ~/.replication/config.json</file>
+      <file path="src/utils/result.ts">PRIMEIRO arquivo a ser criado. Tipos Result&lt;T,E&gt;, Ok, Err e funções ok(), err(), tryAsync() — base de todo o tratamento de erros Go-style</file>
+      <file path="src/utils/errors.ts">Tipos de erro de domínio: ConfigError, GeminiError, FileSystemError, ValidationError</file>
+      <file path="src/utils/promptTemplates.ts">Funções de composição de cada técnica de prompt engineering</file>
+      <file path="src/types/index.ts">Tipos TypeScript: Technique, Format, AppConfig, SavedPrompt</file>
+    </project_structure>
+
+    <screens_specification>
+
+      <screen name="MainMenu">
+        Exibe o logo ASCII "Replication" com ink-big-text.
+        Menu com itens lidos de config/menus.json:
+        1. Gerar Novo Prompt
+        2. Ver Prompts Existentes
+        3. Gerar Contexto
+        4. Gerar Padrão de Projeto
+        5. Configurações
+        Navegação: setas + Enter via ink-select-input.
+      </screen>
+
+      <screen name="NewPrompt" steps="5">
+        <step n="1" name="task">Input de texto: "Qual é a sua tarefa? Descreva brevemente."</step>
+        <step n="2" name="format">
+          Select com 3 opções lidas de config/formats.json.
+          Cada opção exibe nome + descrição de vantagem.
+          Ex: XML → "Ideal para prompts estruturados e processáveis por IA"
+        </step>
+        <step n="3" name="techniques">
+          Multi-select das técnicas de config/techniques.json.
+          Cada técnica tem id, nome e descrição curta.
+          Usuário navega com setas, seleciona com espaço, confirma com Enter.
+        </step>
+        <step n="4" name="instruction">
+          TextInput: "Escreva a instrução principal do prompt."
+          Abaixo: opção "✨ Melhorar instrução com IA" que envia a instrução
+          para Gemini com pedido de refinamento antes de prosseguir.
+        </step>
+        <step n="5" name="generate">
+          Spinner enquanto: monta template + chama Gemini + salva arquivo.
+          Ao concluir: exibe caminho do arquivo salvo e preview das primeiras linhas.
+          Opção de voltar ao menu principal.
+        </step>
+      </screen>
+
+      <screen name="ViewPrompts">
+        Lê pasta configurada (default: ~/replication-prompts/).
+        Lista arquivos .xml e .md com nome, data de criação e tamanho.
+        Ao selecionar: exibe conteúdo com scroll.
+        Opção de deletar ou copiar caminho para clipboard.
+      </screen>
+
+      <screen name="Settings">
+        Formulário com campos:
+        - GOOGLE_API_KEY (input masked)
+        - Pasta de saída dos prompts (default: ~/replication-prompts)
+        - Modelo de IA (select: gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash)
+        Salva em ~/.replication/config.json ao confirmar.
+      </screen>
+
+      <screen name="GenerateContext">
+        Input: caminho da pasta do projeto.
+        Exibe lista de arquivos que serão lidos (com contagem).
+        Confirmação antes de enviar para IA.
+        Spinner durante processamento.
+        Salva contexto em {outputDir}/contexto-{nomeProjeto}.md
+      </screen>
+
+      <screen name="ProjectPattern">
+        Similar ao GenerateContext mas o prompt enviado para IA
+        foca em: identificar stack, padrões usados, sugerir melhorias,
+        detectar inconsistências e gerar um PATTERNS.md.
+      </screen>
+
+    </screens_specification>
+
+    <prompt_building_logic>
+      <description>
+        O PromptBuilder.ts deve compor o prompt final assim:
+      </description>
+      <composition_order>
+        1. Se "role_prompting" selecionado → injeta bloco de role/persona
+        2. Se "generated_knowledge" selecionado → injeta bloco de conhecimento relevante
+        3. Se "few_shot" selecionado → injeta 2-3 exemplos de entrada/saída
+        4. Se "chain_of_thought" selecionado → injeta instrução de steps de raciocínio
+        5. Se "tree_of_thoughts" selecionado → injeta bloco de decision_points
+        6. Se "self_consistency" selecionado → injeta instrução de gerar N variações
+        7. Se "react" selecionado → injeta ciclo Thought/Action/Observation
+        8. Se "maieutic" selecionado → injeta bloco de validações
+        9. SEMPRE ao final → injeta a instrução principal do usuário
+      </composition_order>
+      <ia_instruction>
+        Todo esse bloco composto é enviado para o Gemini com o meta-prompt:
+        "Você é um especialista em prompt engineering. Dado o template estruturado
+        abaixo e a tarefa do usuário, gere um prompt profissional, coeso e completo
+        no formato solicitado ({xml|markdown|texto}), incorporando todas as técnicas
+        marcadas. Retorne APENAS o prompt final, sem explicações adicionais."
+      </ia_instruction>
+    </prompt_building_logic>
+
+  </task>
+
+  <!-- ============================================================
+       GO-STYLE ERROR HANDLING
+       (Padrão obrigatório em TODO o codebase)
+  ============================================================ -->
+  <error_handling_pattern>
+    <philosophy>
+      Inspirado em Go: erros são valores, não exceções.
+      Todo erro é explícito, rastreável e tratado pelo chamador.
+      Nenhum erro é silenciado, ignorado ou engolido por um catch vazio.
+    </philosophy>
+
+    <core_type>
+      Criar obrigatoriamente em src/utils/result.ts:
+
+      type Ok&lt;T&gt;  = { readonly ok: true;  readonly value: T }
+      type Err&lt;E&gt; = { readonly ok: false; readonly error: E }
+      type Result&lt;T, E extends Error = Error&gt; = Ok&lt;T&gt; | Err&lt;E&gt;
+
+      export const ok  = &lt;T&gt;(value: T): Ok&lt;T&gt;   =&gt; ({ ok: true,  value })
+      export const err = &lt;E extends Error&gt;(e: E): Err&lt;E&gt; =&gt; ({ ok: false, error: e })
+
+      export async function tryAsync&lt;T&gt;(
+        fn: () =&gt; Promise&lt;T&gt;,
+        context?: string
+      ): Promise&lt;Result&lt;T&gt;&gt; {
+        try {
+          return ok(await fn())
+        } catch (e) {
+          const base = e instanceof Error ? e : new Error(String(e))
+          base.message = context ? `${context}: ${base.message}` : base.message
+          return err(base)
+        }
+      }
+    </core_type>
+
+    <rules>
+      <rule id="ERR1">
+        TODA função de serviço (GeminiService, FileService, ContextService,
+        ConfigService) retorna Promise&lt;Result&lt;T&gt;&gt; — NUNCA lança exceção.
+      </rule>
+      <rule id="ERR2">
+        O chamador SEMPRE faz a guarda antes de usar o valor:
+          const result = await FileService.read(path)
+          if (!result.ok) { /* trata o erro */ return }
+          const data = result.value  // TypeScript infere T aqui
+        Acessar result.value sem checar result.ok é proibido.
+      </rule>
+      <rule id="ERR3">
+        Cada camada de serviço DEVE adicionar contexto ao erro antes de propagar:
+          return err(new Error(`ConfigService.load: ${e.message}`))
+        Isso cria um stack trace legível mesmo sem stacktraces nativos.
+      </rule>
+      <rule id="ERR4">
+        try/catch SOMENTE dentro de tryAsync — nunca espalhado livremente.
+        Qualquer função async que chama código externo (IO, rede, SDK) usa tryAsync.
+      </rule>
+      <rule id="ERR5">
+        Erros nunca são silenciados:
+        PROIBIDO: catch (e) { }  ou  catch (e) { console.log(e) }
+        OBRIGATÓRIO: retornar err(...) com a mensagem contextualizada.
+      </rule>
+      <rule id="ERR6">
+        Componentes Ink exibem erros com Text color="red" no terminal.
+        Erros fatais (boot, config inválida) encerram o app com useApp().exit(error).
+        Erros recuperáveis (chamada de IA, leitura de arquivo) exibem mensagem
+        e oferecem opção de tentar novamente ou voltar ao menu.
+      </rule>
+      <rule id="ERR7">
+        Criar tipos de erro específicos para cada domínio:
+          class ConfigError    extends Error { readonly type = "config"    }
+          class GeminiError    extends Error { readonly type = "gemini"    }
+          class FileSystemError extends Error { readonly type = "filesystem" }
+          class ValidationError extends Error { readonly type = "validation" }
+        Isso permite tratamento diferenciado por tipo na UI.
+      </rule>
+    </rules>
+
+    <few_shot_error_examples>
+      <example label="Serviço retornando Result">
+        <before comment="PROIBIDO — lança exceção">
+          async function readConfig(): Promise&lt;AppConfig&gt; {
+            const raw = await Bun.file(CONFIG_PATH).json()  // explode se não existir
+            return parseConfig(raw)
+          }
+        </before>
+        <after comment="CORRETO — padrão Go-style">
+          async function readConfig(): Promise&lt;Result&lt;AppConfig, ConfigError&gt;&gt; {
+            const fileResult = await tryAsync(
+              () =&gt; Bun.file(CONFIG_PATH).json(),
+              "ConfigService.readConfig"
+            )
+            if (!fileResult.ok) return err(new ConfigError(fileResult.error.message))
+
+            const parsed = AppConfigSchema.safeParse(fileResult.value)
+            if (!parsed.success) return err(new ConfigError("Config inválida: " + parsed.error.message))
+
+            return ok(parsed.data)
+          }
+        </after>
+      </example>
+
+      <example label="Componente consumindo Result">
+        <before comment="PROIBIDO — try/catch em componente">
+          useEffect(() =&gt; {
+            try {
+              const data = await GeminiService.generate(prompt)
+              setOutput(data)
+            } catch(e) {
+              setError("Erro")  // contexto perdido
+            }
+          }, [])
+        </before>
+        <after comment="CORRETO — verifica result.ok">
+          useEffect(() =&gt; {
+            GeminiService.generate(prompt).then(result =&gt; {
+              if (!result.ok) {
+                setError(result.error.message)  // mensagem contextualizada
+                return
+              }
+              setOutput(result.value)
+            })
+          }, [])
+        </after>
+      </example>
+
+      <example label="Propagação com contexto encadeado">
+        <code>
+          // ContextService chama FileService, adiciona contexto próprio
+          async function buildContext(dir: string): Promise&lt;Result&lt;string&gt;&gt; {
+            const filesResult = await FileService.readDir(dir)
+            if (!filesResult.ok) {
+              return err(new Error(`ContextService.buildContext: ${filesResult.error.message}`))
+            }
+            // "ContextService.buildContext: FileService.readDir: ENOENT: no such file..."
+            // Stack legível, rastreável, sem perder o erro original
+          }
+        </code>
+      </example>
+    </few_shot_error_examples>
+
+    <validation>
+      O modelo deve confirmar: em NENHUM serviço existe throw, try/catch avulso,
+      Promise rejeitada não tratada ou .catch() silencioso.
+      Rodar: grep -r "throw " src/services/ deve retornar vazio.
+    </validation>
+  </error_handling_pattern>
+
+  <!-- ============================================================
+       CONSTRAINTS E REGRAS INEGOCIÁVEIS
+  ============================================================ -->
+  <constraints>
+    <rule>TODOS os textos de UI (labels, menus, mensagens) devem vir de config/*.json — zero strings hardcoded em componentes</rule>
+    <rule>A API Key NUNCA deve aparecer em logs, outputs ou ser commitada — usar ~/.replication/config.json fora do projeto</rule>
+    <rule>Cada arquivo deve ter no máximo 150 linhas — dividir em módulos menores se necessário</rule>
+    <rule>Usar TypeScript strict mode — sem any implícito</rule>
+    <rule>OBRIGATÓRIO: padrão Go-style de erros em TODO o codebase — ver seção error_handling_pattern. PROIBIDO: throw, try/catch avulso, catch vazio, Promise rejeitada não tratada</rule>
+    <rule>src/utils/result.ts deve ser o PRIMEIRO arquivo criado — todos os serviços dependem dele</rule>
+    <rule>Cada serviço tem seu próprio tipo de Error (ConfigError, GeminiError, FileSystemError, ValidationError)</rule>
+    <rule>O app deve funcionar offline para todos os fluxos que não dependem de IA</rule>
+    <rule>Usar Zod para validar config.json lido do disco antes de usar — erros de validação retornam ValidationError via Result</rule>
+    <rule>Arquivos salvos devem ter nome no formato: {slug-da-tarefa}-{timestamp}.{ext}</rule>
+    <rule>Erros exibidos no terminal devem ter contexto completo da cadeia de chamadas (ERR3)</rule>
+  </constraints>
+
+  <!-- ============================================================
+       OUTPUT ESPERADO
+  ============================================================ -->
+  <expected_output>
+    <format>
+      Entregue TODOS os arquivos listados em project_structure, completos e funcionais,
+      prontos para executar com: bun install &amp;&amp; bun run src/index.tsx
+    </format>
+    <quality_bar>
+      - Código que roda sem erros no primeiro bun run
+      - Navegação fluida entre todas as telas
+      - Integração com Gemini funcionando (com tratamento de erro se sem API key)
+      - Prompts sendo salvos corretamente em disco
+      - Visual polido com ink-big-text no header e ink-spinner nos loadings
+    </quality_bar>
+  </expected_output>
+
+</prompt>

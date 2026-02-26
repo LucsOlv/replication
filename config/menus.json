@@ -1,0 +1,32 @@
+{
+  "mainMenu": [
+    { "label": "Gerar Novo Prompt", "value": "NewPrompt" },
+    { "label": "Ver Prompts Existentes", "value": "ViewPrompts" },
+    { "label": "Gerar Contexto", "value": "GenerateContext" },
+    { "label": "Gerar Padrão de Projeto", "value": "ProjectPattern" },
+    { "label": "Configurações", "value": "Settings" }
+  ],
+  "labels": {
+    "task": "Qual é a sua tarefa? Descreva brevemente.",
+    "instruction": "Escreva a instrução principal do prompt.",
+    "enhanceWithIA": "✨ Melhorar instrução com IA",
+    "generate": "Gerando prompt...",
+    "generatingContext": "Gerando contexto...",
+    "generatingPattern": "Analisando projeto e gerando padrão...",
+    "loading": "Carregando...",
+    "apiKey": "GOOGLE_API_KEY",
+    "outputDir": "Pasta de saída dos prompts",
+    "model": "Modelo de IA",
+    "save": "Salvar Configurações",
+    "saved": "Configuração salva com sucesso!",
+    "backToMenu": "Voltar ao Menu Principal",
+    "delete": "Deletar Arquivo",
+    "copyPath": "Copiar Caminho"
+  },
+  "messages": {
+    "welcome": "Bem-vindo ao Replication!",
+    "noPrompts": "Nenhum prompt salvo encontrado.",
+    "selectFormat": "Selecione o formato do prompt:",
+    "selectTechniques": "Selecione as técnicas (Espaço para selecionar, Enter para confirmar):"
+  }
+}

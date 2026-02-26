@@ -1,0 +1,50 @@
+[
+  {
+    "id": "role_prompting",
+    "name": "Role Prompting",
+    "description": "Define uma persona especialista para o modelo.",
+    "template": "Você é um especialista em {domain}. Pense e aja como um sênior com anos de experiência."
+  },
+  {
+    "id": "generated_knowledge",
+    "name": "Generated Knowledge",
+    "description": "Gera conhecimento de base antes de responder.",
+    "template": "Antes de escrever o código, liste os conceitos-chave, ferramentas e hooks que serão utilizados."
+  },
+  {
+    "id": "few_shot",
+    "name": "Few-Shot",
+    "description": "Inclui exemplos de entrada e saída esperada.",
+    "template": "Use os exemplos fornecidos para orientar a estrutura e tom da sua resposta."
+  },
+  {
+    "id": "chain_of_thought",
+    "name": "Chain-of-Thought (CoT)",
+    "description": "Instrui o modelo a raciocinar passo a passo.",
+    "template": "Pense passo a passo. Descreva seu raciocínio antes de fornecer a resposta final."
+  },
+  {
+    "id": "tree_of_thoughts",
+    "name": "Tree of Thoughts (ToT)",
+    "description": "Explora múltiplos caminhos e avalia opções.",
+    "template": "Explore 3 abordagens diferentes. Avalie os prós e contras de cada uma e escolha a melhor."
+  },
+  {
+    "id": "self_consistency",
+    "name": "Self-Consistency",
+    "description": "Gera variações e consolida na melhor.",
+    "template": "Gere 3 versões distintas internamente. Compare-as por legibilidade e escalabilidade, entregando apenas a melhor versão final."
+  },
+  {
+    "id": "react",
+    "name": "ReAct",
+    "description": "Ciclo de Raciocinar (Thought) → Agir (Action) → Observar (Observation).",
+    "template": "Execute o ciclo ReAct para cada etapa: Thought → Action → Observation. Repita se necessário."
+  },
+  {
+    "id": "maieutic",
+    "name": "Maieutic Prompting",
+    "description": "Valida e justifica as próprias afirmações.",
+    "template": "Antes de finalizar, valide e justifique por que as decisões tomadas atendem a todos os requisitos e regras propostas."
+  }
+]

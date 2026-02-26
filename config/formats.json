@@ -1,0 +1,17 @@
+[
+  {
+    "id": "xml",
+    "name": "XML",
+    "description": "Ideal para prompts estruturados e processáveis por IA"
+  },
+  {
+    "id": "markdown",
+    "name": "Markdown",
+    "description": "Excelente para legibilidade humana e documentação rica"
+  },
+  {
+    "id": "texto",
+    "name": "Texto Simples",
+    "description": "Bom para interações diretas e sem estrutura complexa"
+  }
+]

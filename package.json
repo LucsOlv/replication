@@ -1,0 +1,23 @@
+{
+  "name": "replication-tui",
+  "version": "1.0.0",
+  "description": "Replication TUI Generator",
+  "main": "src/index.tsx",
+  "scripts": {
+    "start": "bun run src/index.tsx",
+    "dev": "bun run --watch src/index.tsx"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.7.0",
+    "@opentui/core": "^0.1.83",
+    "@opentui/react": "^0.1.83",
+    "chalk": "5.3.0",
+    "react": "19",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.1",
+    "@types/react": "19",
+    "typescript": "^5.9.3"
+  }
+}
