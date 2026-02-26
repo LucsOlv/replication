@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { AppConfig } from "../types";
 import { ContextService } from "../services/ContextService";
-import { GeminiService } from "../services/GeminiService";
+import { OpenRouterService } from "../services/OpenRouterService";
 import { FileService } from "../services/FileService";
+import { ScreenContainer } from "../components/ScreenContainer";
+import { StepIndicator } from "../components/StepIndicator";
+import { LoadingBox, SuccessBox } from "../components/StatusBox";
 import { join } from "path";
 import { useKeyboard } from "@opentui/react";
 
@@ -45,8 +48,8 @@ export function ProjectPattern({ config, onBack, onError }: Props) {
       return;
     }
 
-    const prompt = `Analise a estrutura e o código do projeto abaixo. Identifique a stack de tecnologias, padrões de arquitetura usados, detecte inconsistências e gere um documento PATTERNS.md recomendando boas práticas para padronização e refatoração deste projeto.\n\n${contentRes.value}`;
-    const iaRes = await GeminiService.generate(prompt);
+    const prompt = `Analise a estrutura e o codigo do projeto abaixo. Identifique a stack de tecnologias, padroes de arquitetura usados, detecte inconsistencias e gere um documento PATTERNS.md recomendando boas praticas para padronizacao e refatoracao deste projeto.\n\n${contentRes.value}`;
+    const iaRes = await OpenRouterService.generate(prompt);
     if (!iaRes.ok) {
       onError(iaRes.error.message);
       setIsProcessing(false);
@@ -67,38 +70,51 @@ export function ProjectPattern({ config, onBack, onError }: Props) {
     setIsProcessing(false);
   };
 
+  const stepLabels = ["Caminho", "Analisar", "Concluido"];
+
   return (
-    <box flexDirection="column">
-      <text><strong>Gerar Padrão de Projeto (Esc para voltar)</strong></text>
-      
+    <ScreenContainer title="Gerar Padrao de Projeto" width={60} showStep={{ current: step, total: 3 }}>
+      <StepIndicator current={step} total={3} labels={stepLabels} />
+
       {step === 1 && (
-        <box flexDirection="column">
-          <text>Caminho do projeto: </text>
+        <box flexDirection="column" gap={1}>
+          <text>
+            <span style={{ fg: "cyan" }}>Caminho do projeto:</span>
+          </text>
           <box style={{ height: 1 }}>
-            <input value={projectPath} focused onInput={setProjectPath} onSubmit={(val: any) => handlePathSubmit(val)} />
+            <input
+              value={projectPath}
+              focused
+              onInput={setProjectPath}
+              onSubmit={(val: any) => handlePathSubmit(val)}
+            />
           </box>
         </box>
       )}
 
       {step === 2 && !isProcessing && (
-        <box flexDirection="column">
-          <text>Encontrados {files.length} arquivos válidos.</text>
-          <text>Pressione Enter para analisar padrões.</text>
+        <box flexDirection="column" gap={1}>
+          <text>
+            <span style={{ fg: "green" }}>Encontrados {files.length} arquivos validos.</span>
+          </text>
+          <text>
+            <span style={{ fg: "gray" }}>Pressione Enter para analisar padroes.</span>
+          </text>
         </box>
       )}
 
-      {isProcessing && (
-        <box>
-          <text><span fg="magenta">Analisando projeto e gerando padrões...</span></text>
-        </box>
-      )}
+      {isProcessing && <LoadingBox message="Analisando projeto e gerando padroes..." />}
 
       {step === 3 && (
-        <box flexDirection="column">
-          <text><span fg="green">Padrões salvos em: {resultPath}</span></text>
-          <text>Pressione Enter para voltar.</text>
-        </box>
+        <SuccessBox message="Padroes salvos com sucesso!">
+          <text>
+            <span style={{ fg: "cyan" }}>{resultPath}</span>
+          </text>
+          <text>
+            <span style={{ fg: "gray" }}>Pressione Enter para voltar.</span>
+          </text>
+        </SuccessBox>
       )}
-    </box>
+    </ScreenContainer>
   );
 }

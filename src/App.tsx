@@ -5,6 +5,8 @@ import { ViewPrompts } from "./screens/ViewPrompts";
 import { Settings } from "./screens/Settings";
 import { GenerateContext } from "./screens/GenerateContext";
 import { ProjectPattern } from "./screens/ProjectPattern";
+import { Layout } from "./components/Layout";
+import { ErrorBox } from "./components/StatusBox";
 import { ConfigService } from "./services/ConfigService";
 import { AppConfig } from "./types";
 import { homedir } from "os";
@@ -24,7 +26,7 @@ export default function App() {
         setConfig({
           apiKey: "",
           outputDir: join(homedir(), "replication-prompts"),
-          model: "gemini-1.5-pro",
+          model: "google/gemini-2.5-flash",
         });
       } else {
         setConfig(result.value);
@@ -34,23 +36,46 @@ export default function App() {
   }, []);
 
   if (!config) {
-    return <text>Carregando configurações...</text>;
+    return (
+      <box flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+        <text>
+          <span style={{ fg: "yellow" }}>Carregando configuracoes...</span>
+        </text>
+      </box>
+    );
   }
 
-  const navigate = (screen: any) => {
-    setCurrentScreen(screen);
+  const navigate = (screen: string) => {
+    setCurrentScreen(screen as Screen);
     setError(null);
   };
 
+  const renderScreen = () => {
+    if (error) {
+      return <ErrorBox message={error} />;
+    }
+
+    switch (currentScreen) {
+      case "MainMenu":
+        return <MainMenu onNavigate={navigate} />;
+      case "NewPrompt":
+        return <NewPrompt config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+      case "ViewPrompts":
+        return <ViewPrompts config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+      case "Settings":
+        return <Settings config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+      case "GenerateContext":
+        return <GenerateContext config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+      case "ProjectPattern":
+        return <ProjectPattern config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+      default:
+        return <MainMenu onNavigate={navigate} />;
+    }
+  };
+
   return (
-    <box flexDirection="column" alignItems="center" justifyContent="center" padding={1} style={{ flexGrow: 1, width: "100%", height: "100%" }}>
-      {error && <text><span fg="red">Erro: {error}</span></text>}
-      {currentScreen === "MainMenu" && <MainMenu onNavigate={navigate} />}
-      {currentScreen === "NewPrompt" && <NewPrompt config={config} onBack={() => navigate("MainMenu")} onError={setError} />}
-      {currentScreen === "ViewPrompts" && <ViewPrompts config={config} onBack={() => navigate("MainMenu")} onError={setError} />}
-      {currentScreen === "Settings" && <Settings config={config} onBack={() => navigate("MainMenu")} onError={setError} />}
-      {currentScreen === "GenerateContext" && <GenerateContext config={config} onBack={() => navigate("MainMenu")} onError={setError} />}
-      {currentScreen === "ProjectPattern" && <ProjectPattern config={config} onBack={() => navigate("MainMenu")} onError={setError} />}
-    </box>
+    <Layout currentScreen={currentScreen}>
+      {renderScreen()}
+    </Layout>
   );
 }

@@ -6,11 +6,11 @@ export class ConfigError extends Error {
   }
 }
 
-export class GeminiError extends Error {
-  readonly type = "gemini";
+export class OpenRouterError extends Error {
+  readonly type = "openrouter";
   constructor(message: string) {
     super(message);
-    this.name = "GeminiError";
+    this.name = "OpenRouterError";
   }
 }
 

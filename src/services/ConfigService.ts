@@ -23,7 +23,7 @@ export class ConfigService {
       const fs = await import("fs/promises");
       const exists = await fs.access(this.configPath).then(() => true).catch(() => false);
       if (!exists) {
-        return { apiKey: "", outputDir: join(homedir(), "replication-prompts"), model: "gemini-1.5-pro" };
+        return { apiKey: "", outputDir: join(homedir(), "replication-prompts"), model: "google/gemini-2.5-flash" };
       }
       const data = await fs.readFile(this.configPath, "utf-8");
       return JSON.parse(data);

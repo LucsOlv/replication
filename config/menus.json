@@ -1,10 +1,30 @@
 {
   "mainMenu": [
-    { "label": "Gerar Novo Prompt", "value": "NewPrompt" },
-    { "label": "Ver Prompts Existentes", "value": "ViewPrompts" },
-    { "label": "Gerar Contexto", "value": "GenerateContext" },
-    { "label": "Gerar Padrão de Projeto", "value": "ProjectPattern" },
-    { "label": "Configurações", "value": "Settings" }
+    {
+      "label": "GERAR NOVO PROMPT",
+      "value": "NewPrompt",
+      "description": "Crie um novo prompt personalizado"
+    },
+    {
+      "label": "VER PROMPTS EXISTENTES",
+      "value": "ViewPrompts",
+      "description": "Visualize todos os prompts salvos"
+    },
+    {
+      "label": "GERAR CONTEXTO",
+      "value": "GenerateContext",
+      "description": "Gere contexto para seus prompts"
+    },
+    {
+      "label": "GERAR PADRÃO DE PROJETO",
+      "value": "ProjectPattern",
+      "description": "Analise e gere padrão do projeto"
+    },
+    {
+      "label": "CONFIGURAÇÕES",
+      "value": "Settings",
+      "description": "Ajuste as configurações da aplicação"
+    }
   ],
   "labels": {
     "task": "Qual é a sua tarefa? Descreva brevemente.",

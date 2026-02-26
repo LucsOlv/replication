@@ -1,10 +1,10 @@
 import { join } from "path";
 import { Technique, Format } from "../types";
 import { Result, ok, err, tryAsync } from "../utils/result";
-import { FileSystemError, GeminiError } from "../utils/errors";
+import { FileSystemError, OpenRouterError } from "../utils/errors";
 import { FileService } from "./FileService";
 import { getTechniquesContent } from "../utils/promptTemplates";
-import { GeminiService } from "./GeminiService";
+import { OpenRouterService } from "./OpenRouterService";
 
 export class PromptBuilder {
   static async buildAndSave(
@@ -13,11 +13,11 @@ export class PromptBuilder {
     format: Format,
     techniques: Technique[],
     outputDir: string
-  ): Promise<Result<string, FileSystemError | GeminiError | Error>> {
-    
+  ): Promise<Result<string, FileSystemError | OpenRouterError | Error>> {
+
     // 1. Mount initial template content
     const templatePath = join(process.cwd(), "config", "templates", `prompt.${format.id === "xml" ? "xml" : "md"}`);
-    
+
     // We try to read local template. If it fails, we provide fallback
     let templateContent = "";
     const templateResult = await FileService.readFile(templatePath);
@@ -55,12 +55,12 @@ export class PromptBuilder {
 
 ${composedPrompt}`;
 
-    const geminiResult = await GeminiService.generate(metaPrompt);
-    if (!geminiResult.ok) {
-      return err(geminiResult.error);
+    const aiResult = await OpenRouterService.generate(metaPrompt);
+    if (!aiResult.ok) {
+      return err(aiResult.error);
     }
 
-    const finalPrompt = geminiResult.value;
+    const finalPrompt = aiResult.value;
 
     // 3. Save to disk
     const slug = task.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
