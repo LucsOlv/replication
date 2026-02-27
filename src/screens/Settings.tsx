@@ -37,7 +37,7 @@ export function Settings({ config, onBack, onError }: Props) {
 
   if (saved) {
     return (
-      <ScreenContainer title="Configuracoes" width={50}>
+      <ScreenContainer title="Configuracoes">
         <SuccessBox message="Configuracao salva com sucesso!">
           <text>
             <span style={{ fg: "gray" }}>Pressione Enter para voltar.</span>
@@ -48,7 +48,7 @@ export function Settings({ config, onBack, onError }: Props) {
   }
 
   return (
-    <ScreenContainer title="Configuracoes" width={55} showStep={{ current: step, total: 3 }}>
+    <ScreenContainer title="Configuracoes" showStep={{ current: step, total: 3 }}>
       <StepIndicator current={step} total={3} labels={stepLabels} />
 
       {step === 1 && (

@@ -92,7 +92,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
   const stepLabels = ["Tarefa", "Formato", "Tecnicas", "Instrucao", "Concluido"];
 
   return (
-    <ScreenContainer title="Criar Novo Prompt" width={75} showStep={{ current: step, total: 5 }}>
+    <ScreenContainer title="Criar Novo Prompt" showStep={{ current: step, total: 5 }}>
       <StepIndicator current={step} total={5} labels={stepLabels} />
 
       {step === 1 && (

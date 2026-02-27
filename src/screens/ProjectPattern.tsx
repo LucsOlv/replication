@@ -73,7 +73,7 @@ export function ProjectPattern({ config, onBack, onError }: Props) {
   const stepLabels = ["Caminho", "Analisar", "Concluido"];
 
   return (
-    <ScreenContainer title="Gerar Padrao de Projeto" width={60} showStep={{ current: step, total: 3 }}>
+    <ScreenContainer title="Gerar Padrao de Projeto" showStep={{ current: step, total: 3 }}>
       <StepIndicator current={step} total={3} labels={stepLabels} />
 
       {step === 1 && (

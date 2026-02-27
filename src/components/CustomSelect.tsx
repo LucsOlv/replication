@@ -56,7 +56,7 @@ export function MenuSelect({ options, onSelect, focused = true, height }: Props)
             borderStyle={isSelected ? "double" : "single"}
             borderColor={isSelected ? "#58a6ff" : "#2d333b"}
             backgroundColor={isSelected ? "#1a1a2e" : undefined}
-            width={70}
+            width="100%"
           >
             <box width={3} alignItems="center">
               <text>
@@ -84,10 +84,12 @@ interface CardSelectProps {
   options: SelectOption[];
   onSelect: (item: SelectOption) => void;
   focused?: boolean;
+  height?: number;
 }
 
-export function CardSelect({ options, onSelect, focused = true }: CardSelectProps) {
+export function CardSelect({ options, onSelect, focused = true, height = 5 }: CardSelectProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const visibleCount = Math.min(height, options.length);
 
   useKeyboard((key) => {
     if (!focused) return;
@@ -102,19 +104,38 @@ export function CardSelect({ options, onSelect, focused = true }: CardSelectProp
     }
   });
 
+  const getVisibleRange = () => {
+    if (options.length <= visibleCount) return { start: 0, items: options };
+    let start = selectedIndex - Math.floor(visibleCount / 2);
+    if (start < 0) start = 0;
+    if (start + visibleCount > options.length) start = Math.max(0, options.length - visibleCount);
+    return { start, items: options.slice(start, start + visibleCount) };
+  };
+
+  const { start: startIndex, items: visibleOptions } = getVisibleRange();
+  const hasMoreUp = startIndex > 0;
+  const hasMoreDown = startIndex + visibleCount < options.length;
+
   return (
-    <box flexDirection="column" gap={1}>
-      {options.map((opt, i) => {
-        const isSelected = i === selectedIndex;
+    <box flexDirection="column" gap={0}>
+      {hasMoreUp && (
+        <text>
+          <span style={{ fg: "#484f58" }}>  ▲ mais {startIndex} acima</span>
+        </text>
+      )}
+      {visibleOptions.map((opt, i) => {
+        const realIndex = startIndex + i;
+        const isSelected = realIndex === selectedIndex;
 
         return (
           <box
-            key={i}
+            key={realIndex}
             flexDirection="row"
-            padding={1}
+            paddingX={1}
             border
             borderStyle={isSelected ? "double" : "single"}
             borderColor={isSelected ? "#00d9ff" : "#21262d"}
+            width="100%"
           >
             <box width={4} alignItems="center">
               <text>
@@ -141,6 +162,11 @@ export function CardSelect({ options, onSelect, focused = true }: CardSelectProp
           </box>
         );
       })}
+      {hasMoreDown && (
+        <text>
+          <span style={{ fg: "#484f58" }}>  ▼ mais {options.length - startIndex - visibleCount} abaixo</span>
+        </text>
+      )}
     </box>
   );
 }

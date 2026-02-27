@@ -3,11 +3,10 @@ import { ReactNode } from "react";
 interface Props {
   title: string;
   children: ReactNode;
-  width?: number | `${number}%`;
   showStep?: { current: number; total: number };
 }
 
-export function ScreenContainer({ title, children, width = 70, showStep }: Props) {
+export function ScreenContainer({ title, children, showStep }: Props) {
   return (
     <box
       flexDirection="column"
@@ -16,7 +15,7 @@ export function ScreenContainer({ title, children, width = 70, showStep }: Props
       borderColor="#58a6ff"
       padding={1}
       paddingX={2}
-      width={width}
+      width="100%"
     >
       <box marginBottom={1} flexDirection="row" justifyContent="space-between">
         <text>
@@ -28,7 +27,7 @@ export function ScreenContainer({ title, children, width = 70, showStep }: Props
           </text>
         )}
       </box>
-      <box flexDirection="column" gap={1}>
+      <box flexDirection="column" gap={1} width="100%">
         {children}
       </box>
     </box>

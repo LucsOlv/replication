@@ -43,7 +43,7 @@ export function Layout({ children, currentScreen = "MainMenu" }: Props) {
         </text>
       </box>
 
-      <box flexGrow={1} flexDirection="column" alignItems="center" justifyContent="center" padding={1}>
+      <box flexGrow={1} flexDirection="column" paddingX={2} padding={1} width="100%">
         {children}
       </box>
 

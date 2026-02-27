@@ -72,7 +72,7 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
 
   if (loading) {
     return (
-      <ScreenContainer title="Prompts Salvos" width={50}>
+      <ScreenContainer title="Prompts Salvos">
         <text>
           <span style={{ fg: "yellow" }}>Carregando...</span>
         </text>
@@ -87,7 +87,7 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
     const hasMoreUp = scrollOffset > 0;
 
     return (
-      <ScreenContainer title="Conteúdo do Arquivo" width="80%">
+      <ScreenContainer title="Conteúdo do Arquivo">
         <box flexDirection="column" gap={0}>
           <text>
             <span style={{ fg: "magenta" }}>{hasMoreUp ? "... (Role para cima: SETA CIMA / PAGEUP) ..." : " "}</span>
@@ -114,7 +114,7 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
   items.push({ name: "Voltar", description: "Retornar ao menu", value: "back" });
 
   return (
-    <ScreenContainer title={`Prompts em ${config.outputDir}`} width={80}>
+    <ScreenContainer title={`Prompts em ${config.outputDir}`}>
       {prompts.length === 0 ? (
         <box flexDirection="column" gap={1}>
           <text>

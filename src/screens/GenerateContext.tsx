@@ -73,7 +73,7 @@ export function GenerateContext({ config, onBack, onError }: Props) {
   const stepLabels = ["Caminho", "Processar", "Concluido"];
 
   return (
-    <ScreenContainer title="Gerar Contexto do Projeto" width={60} showStep={{ current: step, total: 3 }}>
+    <ScreenContainer title="Gerar Contexto do Projeto" showStep={{ current: step, total: 3 }}>
       <StepIndicator current={step} total={3} labels={stepLabels} />
 
       {step === 1 && (
