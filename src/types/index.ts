@@ -3,6 +3,7 @@ export interface Technique {
   name: string;
   description: string;
   template?: string;
+  sectionId?: string;
 }
 
 export interface Format {

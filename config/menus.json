@@ -41,7 +41,11 @@
     "saved": "Configuração salva com sucesso!",
     "backToMenu": "Voltar ao Menu Principal",
     "delete": "Deletar Arquivo",
-    "copyPath": "Copiar Caminho"
+    "copyPath": "Copiar Caminho",
+    "selectPatternsMode": "Como deseja definir os padrões do projeto?",
+    "selectContextMode": "Como deseja definir o contexto do projeto?",
+    "readingPatterns": "Lendo e analisando padrões do projeto...",
+    "readingContext": "Lendo e analisando contexto do projeto..."
   },
   "messages": {
     "welcome": "Bem-vindo ao Replication!",

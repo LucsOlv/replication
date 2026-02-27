@@ -1,58 +1,58 @@
 import { join } from "path";
 import { Technique, Format } from "../types";
-import { Result, ok, err, tryAsync } from "../utils/result";
+import { Result, ok, err } from "../utils/result";
 import { FileSystemError, OpenRouterError } from "../utils/errors";
 import { FileService } from "./FileService";
-import { getTechniquesContent } from "../utils/promptTemplates";
+import { TemplateService } from "./TemplateService";
 import { OpenRouterService } from "./OpenRouterService";
 
 export class PromptBuilder {
-  static async buildAndSave(
+  static async build(
     task: string,
     instruction: string,
     format: Format,
     techniques: Technique[],
-    outputDir: string
+    patterns?: string,
+    context?: string
   ): Promise<Result<string, FileSystemError | OpenRouterError | Error>> {
 
-    // 1. Mount initial template content
-    const templatePath = join(process.cwd(), "config", "templates", `prompt.${format.id === "xml" ? "xml" : "md"}`);
+    // 1. Build the composed template using TemplateService
+    let composedPrompt: string;
 
-    // We try to read local template. If it fails, we provide fallback
-    let templateContent = "";
-    const templateResult = await FileService.readFile(templatePath);
-    if (templateResult.ok) {
-      templateContent = templateResult.value;
-    } else {
-      // Fallback if template doesn't exist
-      if (format.id === "xml") {
-        templateContent = `<?xml version="1.0" encoding="UTF-8"?>
-<prompt>
-<task>{{TASK}}</task>
-<instruction>{{INSTRUCTION}}</instruction>
-<techniques>{{TECHNIQUES_CONTENT}}</techniques>
-</prompt>`;
-      } else {
-        templateContent = `# Tarefa
-{{TASK}}
-
-# Instrução
-{{INSTRUCTION}}
-
-# Técnicas
-{{TECHNIQUES_CONTENT}}`;
+    if (format.id === "xml") {
+      const templateResult = await TemplateService.buildFromTechniques(
+        task,
+        instruction,
+        techniques,
+        patterns,
+        context
+      );
+      if (!templateResult.ok) {
+        return err(templateResult.error);
       }
+      composedPrompt = templateResult.value;
+    } else {
+      composedPrompt = TemplateService.buildMarkdownFromTechniques(
+        task,
+        instruction,
+        techniques,
+        patterns,
+        context
+      );
     }
 
-    const techContent = getTechniquesContent(techniques);
-    let composedPrompt = templateContent
-      .replace("{{TASK}}", task)
-      .replace("{{INSTRUCTION}}", instruction)
-      .replace("{{TECHNIQUES_CONTENT}}", techContent);
+    // 2. Call AI to generate the final prompt
+    const metaPrompt = `Você é um especialista em prompt engineering. Abaixo está um template estruturado com placeholders no formato {{PLACEHOLDER}}. Sua tarefa é:
 
-    // 2. Call IA to generate the final prompt
-    const metaPrompt = `Você é um especialista em prompt engineering. Dado o template estruturado abaixo e a tarefa do usuário, gere um prompt profissional, coeso e completo no formato solicitado (${format.id}), incorporando todas as técnicas marcadas. Retorne APENAS o prompt final, sem explicações adicionais.
+1. Ler o template e a descrição da tarefa do usuário
+2. Preencher TODOS os placeholders {{...}} com conteúdo relevante e profissional baseado na tarefa descrita
+3. Manter a estrutura e formato do template (${format.id.toUpperCase()})
+4. Remover comentários do template (<!-- ... -->)
+5. Retornar APENAS o prompt final preenchido, sem explicações
 
+TAREFA DO USUÁRIO: ${instruction}
+
+TEMPLATE A PREENCHER:
 ${composedPrompt}`;
 
     const aiResult = await OpenRouterService.generate(metaPrompt);
@@ -60,16 +60,22 @@ ${composedPrompt}`;
       return err(aiResult.error);
     }
 
-    const finalPrompt = aiResult.value;
+    return ok(aiResult.value);
+  }
 
-    // 3. Save to disk
+  static async save(
+    promptContent: string,
+    task: string,
+    format: Format,
+    outputDir: string
+  ): Promise<Result<string, FileSystemError | Error>> {
     const slug = task.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const timestamp = Date.now();
     const ext = format.id === "xml" ? "xml" : (format.id === "markdown" ? "md" : "txt");
     const filename = `${slug || 'prompt'}-${timestamp}.${ext}`;
     const filePath = join(outputDir, filename);
 
-    const saveResult = await FileService.saveFile(filePath, finalPrompt);
+    const saveResult = await FileService.saveFile(filePath, promptContent);
     if (!saveResult.ok) {
       return err(saveResult.error);
     }
