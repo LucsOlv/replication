@@ -6,57 +6,39 @@ import { InfoBox } from "../components/StatusBox";
 import { MinimalSelect } from "../components/CustomSelect";
 import { useKeyboard } from "@opentui/react";
 
+import { useAppStore } from "../store/useAppStore";
+
 interface Props {
-  config: AppConfig;
   onBack: () => void;
-  onError: (msg: string) => void;
 }
 
-export function ViewPrompts({ config, onBack, onError }: Props) {
+export function ViewPrompts({ onBack }: Props) {
+  const { config, setError } = useAppStore();
   const [prompts, setPrompts] = useState<SavedPrompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedContent, setSelectedContent] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
+      if (!config) return;
       const res = await FileService.readDir(config.outputDir);
       if (res.ok) setPrompts(res.value);
-      else onError(res.error.message);
+      else setError(res.error.message);
       setLoading(false);
     }
     load();
-  }, [config.outputDir, onError]);
-
-  const [scrollOffset, setScrollOffset] = useState(0);
-  const CONTENT_LINES_VISIBLE = 20;
+  }, [config?.outputDir, setError]);
 
   useKeyboard((key) => {
     if (key.name === "escape") {
       if (selectedContent) {
         setSelectedContent(null);
-        setScrollOffset(0);
       } else {
         onBack();
       }
     }
     if (key.name === "return" && selectedContent) {
       setSelectedContent(null);
-      setScrollOffset(0);
-    }
-    if (selectedContent) {
-      const totalLines = selectedContent.split("\n").length;
-      if (key.name === "up") {
-        setScrollOffset((prev) => Math.max(0, prev - 1));
-      }
-      if (key.name === "down") {
-        setScrollOffset((prev) => Math.min(Math.max(0, totalLines - CONTENT_LINES_VISIBLE), prev + 1));
-      }
-      if (key.name === "pageup") {
-         setScrollOffset((prev) => Math.max(0, prev - CONTENT_LINES_VISIBLE));
-      }
-      if (key.name === "pagedown") {
-         setScrollOffset((prev) => Math.min(Math.max(0, totalLines - CONTENT_LINES_VISIBLE), prev + CONTENT_LINES_VISIBLE));
-      }
     }
   });
 
@@ -67,7 +49,7 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
     }
     const res = await FileService.readFile(item.value);
     if (res.ok) setSelectedContent(res.value);
-    else onError(res.error.message);
+    else setError(res.error.message);
   };
 
   if (loading) {
@@ -82,24 +64,30 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
 
   if (selectedContent) {
     const lines = selectedContent.split("\n");
-    const visibleLines = lines.slice(scrollOffset, scrollOffset + CONTENT_LINES_VISIBLE).join("\n");
-    const hasMoreDown = scrollOffset + CONTENT_LINES_VISIBLE < lines.length;
-    const hasMoreUp = scrollOffset > 0;
 
     return (
       <ScreenContainer title="Conteúdo do Arquivo">
-        <box flexDirection="column" gap={0}>
-          <text>
-            <span style={{ fg: "magenta" }}>{hasMoreUp ? "... (Role para cima: SETA CIMA / PAGEUP) ..." : " "}</span>
-          </text>
-          <box height={CONTENT_LINES_VISIBLE}>
-            <text>
-              <span style={{ fg: "gray" }}>{visibleLines || " "}</span>
-            </text>
-          </box>
-          <text>
-            <span style={{ fg: "magenta" }}>{hasMoreDown ? "... (Role para baixo: SETA BAIXO / PAGEDOWN) ..." : " "}</span>
-          </text>
+        <box flexDirection="column" gap={1} height="100%">
+          <scrollbox
+            focused
+            style={{
+              scrollbarOptions: {
+                showArrows: true,
+                trackOptions: {
+                  foregroundColor: "#58a6ff",
+                  backgroundColor: "#2d333b",
+                },
+              },
+            }}
+            flexGrow={1}
+            padding={1}
+          >
+            {lines.map((line, i) => (
+              <text key={i}>
+                <span style={{ fg: "gray" }}>{line || " "}</span>
+              </text>
+            ))}
+          </scrollbox>
         </box>
         <InfoBox message="Pressione Enter ou Esc para voltar" />
       </ScreenContainer>
@@ -114,14 +102,14 @@ export function ViewPrompts({ config, onBack, onError }: Props) {
   items.push({ name: "Voltar", description: "Retornar ao menu", value: "back" });
 
   return (
-    <ScreenContainer title={`Prompts em ${config.outputDir}`}>
+    <ScreenContainer title={`Prompts em ${config?.outputDir}`}>
       {prompts.length === 0 ? (
         <box flexDirection="column" gap={1}>
           <text>
             <span style={{ fg: "yellow" }}>Nenhum prompt encontrado.</span>
           </text>
           <text>
-            <span style={{ fg: "gray" }}>Os prompts serao salvos em: {config.outputDir}</span>
+            <span style={{ fg: "gray" }}>Os prompts serao salvos em: {config?.outputDir}</span>
           </text>
         </box>
       ) : (

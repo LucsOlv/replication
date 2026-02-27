@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useKeyboard } from "@opentui/react";
 
-interface SelectOption {
+export interface SelectOption {
   name: string;
   description?: string;
   value?: any;
@@ -227,6 +227,58 @@ export function MinimalSelect({ options, onSelect, focused = true, height = 15 }
               </text>
             )}
           </box>
+        );
+      })}
+    </box>
+  );
+}
+
+export interface MultiSelectProps {
+  options: SelectOption[];
+  selectedValues: string[];
+  onChange: (selectedValues: string[]) => void;
+  onSubmit: () => void;
+  focused?: boolean;
+}
+
+export function MultiSelect({ options, selectedValues, onChange, onSubmit, focused = true }: MultiSelectProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useKeyboard((key) => {
+    if (!focused) return;
+    if (key.name === "up") {
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+    }
+    if (key.name === "down") {
+      setSelectedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+    }
+    if (key.name === "space") {
+      const opt = options[selectedIndex];
+      if (opt.value && selectedValues.includes(opt.value)) {
+        onChange(selectedValues.filter(v => v !== opt.value));
+      } else if (opt.value) {
+        onChange([...selectedValues, opt.value]);
+      }
+    }
+    if (key.name === "return") {
+      onSubmit();
+    }
+  });
+
+  return (
+    <box flexDirection="column" gap={0}>
+      {options.map((t, i) => {
+        const isHovered = i === selectedIndex;
+        const isChecked = t.value ? selectedValues.includes(t.value) : false;
+
+        return (
+          <text key={i}>
+            <span style={{ fg: isHovered ? "magenta" : "white" }}>
+              {isChecked ? " ◉ " : " ○ "}
+              {t.name}
+              {t.description && <span style={{ fg: "gray" }}> - {t.description}</span>}
+            </span>
+          </text>
         );
       })}
     </box>

@@ -1,7 +1,7 @@
 import { join } from "path";
 import { Technique } from "../types";
 import { Result, ok, err } from "../utils/result";
-import { FileSystemError } from "../utils/errors";
+import { BunFileError } from "../utils/errors";
 import { FileService } from "./FileService";
 
 // Maps each sectionId from techniques.json to the XML tag name in prompt-template.xml
@@ -24,7 +24,7 @@ export class TemplateService {
      * Reads the full prompt-template.xml and extracts individual sections.
      * Returns a map of sectionTag -> section XML content (including the tag itself).
      */
-    static async parseSections(): Promise<Result<Map<string, string>, FileSystemError>> {
+    static async parseSections(): Promise<Result<Map<string, string>, BunFileError>> {
         const templatePath = join(process.cwd(), "config", "templates", "prompt-template.xml");
         const result = await FileService.readFile(templatePath);
 
@@ -62,7 +62,7 @@ export class TemplateService {
         techniques: Technique[],
         patterns?: string,
         context?: string
-    ): Promise<Result<string, FileSystemError>> {
+    ): Promise<Result<string, BunFileError>> {
         const sectionsResult = await this.parseSections();
         if (!sectionsResult.ok) {
             return err(sectionsResult.error);

@@ -2,30 +2,11 @@ import { ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
-  currentScreen?: string;
+  title?: string;
+  help?: string[];
 }
 
-const screenTitles: Record<string, string> = {
-  MainMenu: "Menu Principal",
-  NewPrompt: "Novo Prompt",
-  ViewPrompts: "Prompts Salvos",
-  Settings: "Configuracoes",
-  GenerateContext: "Gerar Contexto",
-  ProjectPattern: "Padrao de Projeto",
-};
-
-const screenHelp: Record<string, string[]> = {
-  MainMenu: ["↑↓ Navegar", "Enter Selecionar"],
-  NewPrompt: ["↑↓ Navegar", "Space Selecionar", "Enter Confirmar", "Ctrl+E IA", "Esc Voltar"],
-  ViewPrompts: ["↑↓ Navegar", "Enter Abrir", "Esc Voltar"],
-  Settings: ["Enter Avancar", "Esc Voltar"],
-  GenerateContext: ["Enter Avancar", "Esc Voltar"],
-  ProjectPattern: ["Enter Avancar", "Esc Voltar"],
-};
-
-export function Layout({ children, currentScreen = "MainMenu" }: Props) {
-  const title = screenTitles[currentScreen] || currentScreen;
-  const helps = screenHelp[currentScreen] || [];
+export function Layout({ children, title = "Replication", help = [] }: Props) {
 
   return (
     <box flexDirection="column" height="100%" width="100%" >
@@ -56,8 +37,8 @@ export function Layout({ children, currentScreen = "MainMenu" }: Props) {
         borderColor="#2d333b"
         gap={3}
       >
-        {helps.map((help, i) => {
-          const parts = help.split(" ");
+        {help.map((h, i) => {
+          const parts = h.split(" ");
           return (
             <box key={i} flexDirection="row" gap={1}>
               <text>

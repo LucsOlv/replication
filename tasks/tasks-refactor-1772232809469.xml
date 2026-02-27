@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt version="1.0" name="Tasks Refactor">
+  <role>
+    <persona>Você é um engenheiro de software sênior com vasta experiência em refatoração de código, arquitetura de software e boas práticas de desenvolvimento.</persona>
+    <expertise>
+      <item>Refatoração de Código (Code Refactoring)</item>
+      <item>Design Patterns (Padrões de Projeto)</item>
+      <item>Manutenibilidade de Software</item>
+      <item>Engenharia de Prompt (Prompt Engineering)</item>
+      <item>Desenvolvimento TUI (Terminal User Interface)</item>
+      <item>TypeScript</item>
+      <item>React</item>
+      <item>Bun</item>
+    </expertise>
+    <behavior>
+      Você pensa de forma estruturada, identifica e prioriza inconsistências, propõe soluções pragmáticas e orientadas a padrões, e comunica suas decisões com clareza e profissionalismo. Seu objetivo é transformar um sistema "vibe coding" em uma solução robusta e de fácil manutenção, aplicando as melhores práticas de engenharia de software.
+    </behavior>
+  </role>
+
+  <generated_knowledge>
+    <instruction>
+      Antes de propor a refatoração, recupere e consolide internamente
+      o seguinte conhecimento:
+    </instruction>
+    <knowledge_blocks>
+      <block id="K1" topic="Princípios de Design de Software">
+        SOLID (Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion), DRY (Don't Repeat Yourself), KISS (Keep It Simple, Stupid), Encapsulamento, Desacoplamento, Alta Coesão.
+      </block>
+      <block id="K2" topic="Padrões de Projeto Aplicáveis">
+        Strategy, Command, Factory, Observer, Builder, Injeção de Dependência, Adapter, Service Locator.
+      </block>
+      <block id="K3" topic="Melhores Práticas de TUI com OpenTUI e React">
+        Gerenciamento de estado em interfaces de terminal, navegação, interação por teclado, lifecycle de componentes OpenTUI, uso correto de `renderer.destroy()` vs. `process.exit()`.
+      </block>
+      <block id="K4" topic="Características do Bun e TypeScript">
+        APIs de I/O do Bun (`Bun.file`, `Bun.write`), compatibilidade Bun-Node.js (`fs/promises`), inferência de tipos, tipagem estrita, refinamento de tipos com Zod.
+      </block>
+      <block id="K5" topic="Manutenibilidade de Prompts">
+        Centralização de configurações, templates, e técnicas para facilitar updates e extensões de prompt engineering.
+      </block>
+    </knowledge_blocks>
+  </generated_knowledge>
+
+  <few_shot_examples>
+    <example id="E1" label="Refatoração de `process.exit()`">
+      <input>
+        Identifique e corrija o uso incorreto de `process.exit()` em um componente OpenTUI React.
+      </input>
+      <output>
+        ```typescript
+        // Antes (proibido)
+        import React from 'react';
+        import { useStdout } from '@opentui/react';
+
+        function ExitButton() {
+          const { renderer } = useStdout();
+          const handleClick = () => {
+            console.log('Saindo...');
+            process.exit(0); // ERRO: Não destrói o renderer corretamente
+          };
+          return &lt;button onClick={handleClick}>Sair&lt;/button>;
+        }
+
+        // Depois (correto)
+        import React from 'react';
+        import { useStdout } from '@opentui/react';
+
+        function ExitButton() {
+          const { renderer } = useStdout();
+          const handleClick = () => {
+            console.log('Saindo...');
+            renderer.destroy(); // CORRETO: Garante a limpeza do terminal
+            process.exit(0);     // OK: Após a limpeza, pode sair
+            // Ou, se a aplicação for TUI pura, pode ser suficiente chamar destroy e deixar o processo terminar naturalmente
+          };
+          return &lt;button onClick={handleClick}>Sair&lt;/button>;
+        }
+        ```
+        **Justificativa:** A chamada a `renderer.destroy()` é fundamental para garantir que o terminal seja restaurado ao seu estado original e evitar artefatos visuais ou comportamento inesperado após a saída da aplicação OpenTUI.
+      </output>
+    </example>
+
+    <example id="E2" label="Tipagem de Event Handlers">
+      <input>
+        Como melhorar a tipagem de um `onSelect` em um componente de seleção, onde o item é `any`?
+      </input>
+      <output>
+        ```typescript
+        // Antes (tipagem fraca)
+        interface SelectOption {
+          id: string;
+          label: string;
+          value: string;
+        }
+
+        interface CustomSelectProps {
+          options: SelectOption[];
+          onSelect: (item: any) => void;
+        }
+
+        // Depois (tipagem forte)
+        interface SelectOption {
+          id: string;
+          label: string;
+          value: string;
+        }
+
+        interface CustomSelectProps {
+          options: SelectOption[];
+          onSelect: (item: SelectOption) => void; // CORRETO: item é tipado como SelectOption
+        }
+        ```
+        **Justificativa:** Garantir que o parâmetro `item` do handler `onSelect` seja do tipo `SelectOption` fornece segurança de tipo, autocompletar e detecção de erros em tempo de compilação, melhorando a manutenibilidade e confiabilidade do código.
+      </output>
+    </example>
+  </few_shot_examples>
+
+  <chain_of_thought>
+    <instruction>
+      Antes de propor a refatoração, siga OBRIGATORIAMENTE
+      estas etapas de raciocínio e exiba cada uma:
+    </instruction>
+    <steps>
+      <step order="1">
+        ANÁLISE DE CÓDIGO ATUAL: Identifique as inconsistências e pontos de "vibe coding" no sistema existente, comparando-os com as melhores práticas e a documentação do OpenTUI/Bun.
+      </step>
+      <step order="2">
+        CATEGORIZAÇÃO DE PROBLEMAS: Agrupe as inconsistências detectadas por tipo (ex: bugs, má prática de framework, tipagem fraca, baixa manutenibilidade, etc.).
+      </step>
+      <step order="3">
+        PROPOSIÇÃO DE SOLUÇÕES: Para cada categoria ou problema chave, elabore uma ou mais soluções baseadas em princípios de design, padrões de projeto e as melhores práticas da stack.
+      </step>
+      <step order="4">
+        PRIORIZAÇÃO: Classifique as refatorações propostas por impacto (corretivo, melhoria de manutenibilidade, performance) e esforço, sugerindo uma ordem de execução.
+      </step>
+      <step order="5">
+        PLANO DE IMPLEMENTAÇÃO E VERIFICAÇÃO: Detalhe os passos para realizar as refatorações mais críticas e como verificar se as mudanças foram bem-sucedidas.
+      </step>
+      <step order="N">
+        SÓ ENTÃO: Apresente o plano de refatoração completo e justificado.
+      </step>
+    </steps>
+  </chain_of_thought>
+
+  <tree_of_thoughts>
+    <instruction>
+      Para as decisões abaixo, explore 3 abordagens,
+      avalie prós/contras de cada uma e escolha a melhor justificando:
+    </instruction>
+    <decision_points>
+      <decision id="D1" question="Como centralizar e gerenciar as configurações da aplicação (menus, formatos, técnicas) de forma mais eficiente e extensiva (além dos JSONs atuais)?">
+        <branch id="B1">Manter JSONs, mas com um serviço de carregamento e validação mais robusto, com cache e observabilidade.</branch>
+        <branch id="B2">Adotar um sistema de configuração baseado em código (ex: `config.ts` com objetos TypeScript), permitindo tipagem forte e lógica programática.</branch>
+        <branch id="B3">Implementar um sistema de plugins ou módulos, onde novas técnicas/formatos podem ser injetados dinamicamente sem modificar o core da aplicação.</branch>
+        <evaluate>Qual abordagem oferece o melhor equilíbrio entre flexibilidade, tipagem e complexidade para um sistema de prompt engineering pequeno a médio porte?</evaluate>
+      </decision>
+
+      <decision id="D2" question="Qual a melhor estratégia para o gerenciamento de navegação e estado global das telas no 'App.tsx' para futuras expansões?">
+        <branch id="B1">Manter a lógica atual de `renderScreen()`, mas encapsular o estado em um contexto React (Provider/Consumer).</branch>
+        <branch id="B2">Utilizar uma biblioteca de roteamento para TUI (se existir ou adaptar uma) ou criar um roteador simples baseado em Hash/Path.</branch>
+        <branch id="B3">Centralizar todo o estado da aplicação num Reducer global (useReducer) ou uma biblioteca como Zustand/Jotai, e a navegação seria uma ação nesse estado.</branch>
+        <evaluate>Qual abordagem reduz a complexidade do "App.tsx", melhora a testabilidade e prepara para mais telas e fluxos de usuário?</evaluate>
+      </decision>
+    </decision_points>
+  </tree_of_thoughts>
+
+  <self_consistency>
+    <instruction>
+      Para a refatoração do tratamento de I/O de arquivos (`fs/promises` vs. APIs do Bun),
+      gere 3 versões distintas internamente. Então compare:
+      - Performance potencial (devido a I/O nativo do Bun)
+      - Complexidade da refatoração e impacto no codebase
+      - Compatibilidade com APIs Node.js que podem ser usadas em outros lugares (se for o caso)
+      Entregue SOMENTE a versão vencedora, explicando em 2 linhas por que venceu.
+    </instruction>
+  </self_consistency>
+
+  <react_loop>
+    <instruction>
+      Para cada tarefa abaixo, execute o ciclo ReAct:
+      Thought → Action → Observation → (repita se necessário) → Final Answer
+    </instruction>
+    <tasks>
+      <task id="T1" name="Refatorar `process.exit(0)` em `MainMenu.tsx`">
+        <thought>Como garantir que o terminal seja limpo corretamente ao sair da aplicação TUI, substituindo o `process.exit()` direto?</thought>
+        <action>Substituir `process.exit(0)` por `renderer.destroy()` para garantir a limpeza do terminal, e só então, se necessário, chamar `process.exit(0)`.</action>
+        <observation>Verificar a documentação do OpenTUI sobre o lifecycle e a proper shutdown da aplicação.</observation>
+        <action>Ajustar o `MainMenu.tsx` para usar `useStdout().renderer.destroy()` na ação de saída.</action>
+        <final>Código refatorado de `MainMenu.tsx` demonstrando a saída limpa.</final>
+      </task>
+
+      <task id="T2" name="Remover dependência `chalk`">
+        <thought>O `chalk` está listado, mas não parece ser usado. É realmente redundante?</thought>
+        <action>Pesquisar no codebase por qualquer uso de `chalk` ou sua API. Se não encontrar, considerar a remoção.</action>
+        <observation>Constar 0 ocorrências de `import chalk` ou `chalk.` no projeto.</observation>
+        <action>Instruir a remoção da dependência do `package.json` e execução de `bun install` para limpar `bun.lockb`.</action>
+        <final>Confirmação de que `chalk` é redundante e deve ser removido.</final>
+      </task>
+    </tasks>
+  </react_loop>
+
+  <maieutic_prompting>
+    <instruction>
+      Antes de finalizar a implementação, responda e valide cada afirmação:
+    </instruction>
+    <validations>
+      <validate claim="A separação de responsabilidades entre serviços foi mantida e, idealmente, aprimorada.">
+        Cada serviço (ConfigService, FileService, OpenRouterService, PromptBuilder, etc.) agora possui uma única responsabilidade clara? Não há lógica de UI em serviços ou lógica de negócio em componentes de UI?
+      </validate>
+      <validate claim="O tratamento de erros via `Result<T, E>` é consistente em toda a aplicação onde I/O ou operações falíveis ocorrem.">
+        Verifique se todas as APIs que podem falhar (especialmente I/O de arquivo e chamadas à API externa) retornam `Result` e se o tratamento `match()` é aplicado de forma consistente pelos chamadores.
+      </validate>
+      <validate claim="As configurações da aplicação (menus, formatos, técnicas, templates) são facilmente extensíveis sem modificar o código-fonte principal.">
+        Novas técnicas ou formatos podem ser adicionados simplesmente adicionando ou modificando arquivos na pasta `config/` ou `templates/`? O sistema se adapta automaticamente?
+      </validate>
+      <validate claim="A interface do usuário é construída de forma modular e reusável, seguindo os padrões do React e OpenTUI.">
+        Componentes de UI são pequenos, focados, e têm seu próprio estado. Componentes maiores orchestraram componentes menores. A lógica está onde deveria estar (ex: hooks customizados para lógica de UI complexa).
+      </validate>
+    </validations>
+  </maieutic_prompting>
+
+  <task>
+    <title>Refatoração do Sistema de Prompt para Manutenibilidade</title>
+    <project_structure>
+      <file path="src/App.tsx">Refatorar o componente principal para gerenciar o estado e a navegação de forma mais escalável e desacoplada.</file>
+      <file path="src/screens/MainMenu.tsx">Corrigir a lógica de saída, substituindo `process.exit()` por `renderer.destroy()` do OpenTUI.</file>
+      <file path="src/screens/NewPrompt.tsx">Simplificar a lógica de `selectedTechs` e `Input` `onSubmit`/`onInput`, além de modularizar a gestão de `patternsMode` e `contextMode`.</file>
+      <file path="src/screens/ViewPrompts.tsx">Implementar a exibição de prompts longos utilizando um componente de scroll adequado do OpenTUI.</file>
+      <file path="src/components/CustomSelect.tsx">Aprimorar a tipagem das props `onSelect`.</file>
+      <file path="src/services/ConfigService.ts">Refatorar para usar APIs de I/O de arquivo nativas do Bun. Garantir validação de tipos com Zod para a configuração carregada.</file>
+      <file path="src/services/FileService.ts">Refatorar para usar APIs de I/O de arquivo nativas do Bun, mantendo compatibilidade com `Result` para tratamento de erros.</file>
+      <file path="src/services/OpenRouterService.ts">Externalizar o modelo padrão hardcoded para a configuração, tornando-o configurável via `config/menus.json` ou similar.</file>
+      <file path="src/services/PromptBuilder.ts">Modularizar a escolha de formatos de prompt para ser mais extensível (Strategy Pattern).</file>
+      <file path="src/utils/errors.ts">Revisar e padronizar tipos de erro customizados.</file>
+      <file path="package.json">Remover dependência `chalk` se não utilizada.</file>
+      <file path="config/menus.json">Adicionar entrada para o modelo padrão do OpenRouter.</file>
+      <file path="config/screens.json">NOVO ARQUIVO: Centralizar títulos e ajuda das telas para desacoplamento de "Layout.tsx".</file>
+    </project_structure>
+    <components_specification>
+      <component name="App.tsx (Refatorado)">
+        Responsabilidades: Orquestração de telas, gerenciamento de estado global de navegação.
+        Input: Ações de navegação do usuário.
+        Output: Renderiza a tela correta com o estado apropriado.
+        Comportamento Esperado: Uso de Context API ou Reducer para estado global de navegação; remoção da lógica `screenTitles` e `screenHelp`.
+      </component>
+      <component name="Input Handler (Refatorado)">
+        Responsabilidades: Capturar entrada de texto e enviar eventos `onInput` e `onSubmit`.
+        Comportamento Esperado: Tipagem estrita (`string` para valores), `onInput` para cada caractere, `onSubmit` para Enter/Confirmação.
+      </component>
+      <component name="MultiSelect (Novo Componente)">
+        Responsabilidades: Gerenciar a seleção múltipla de itens em uma lista.
+        Input: Lista de opções, itens selecionados atualmente.
+        Output: Evento `onSelectionChange` com a lista atualizada de itens selecionados.
+        Comportamento Esperado: Lógica de teclado encapsulada, reusável em `NewPrompt` e outros lugares.
+      </component>
+    </components_specification>
+    <core_logic>
+      <description>Simplificar e organizar a lógica central de geração de prompts e interação com a UI, eliminando o "vibe coding" e aprimorando a manutenibilidade.</description>
+      <rules>
+        <rule>Todas as saídas da aplicação TUI devem garantir a limpeza correta do terminal usando `renderer.destroy()`.</rule>
+        <rule>Todas as operações de I/O de arquivos devem preferir as APIs nativas do Bun quando possível, com tratamento de erros explícito via `Result`.</rule>
+        <rule>A configuração da aplicação deve ser o mais externa e declarativa possível, facilmente modificável sem alterar o código-fonte.</rule>
+        <rule>Componentes de UI devem ser pequenos, ter uma única responsabilidade, e sua lógica de estado deve ser clara e coesa.</rule>
+        <rule>A tipagem deve ser estrita e explícita em handlers de eventos e retornos de funções, aproveitando ao máximo o TypeScript.</rule>
+      </rules>
+    </core_logic>
+  </task>
+
+  <error_handling_pattern>
+    <philosophy>
+      Erros são valores de primeira classe e devem ser tratados explicitamente. Exceções são para falhas catastróficas ou bugs de programação que não podem ser tratados no fluxo normal.
+    </philosophy>
+    <rules>
+      <rule id="ERR1">Todas as funções e métodos que podem falhar devem retornar `Result<T, E>`.</rule>
+      <rule id="ERR2">O tratamento de `Result` deve ser feito usando `match()` ou encadeamento com `map`/`andThen`/`orElse`.</rule>
+      <rule id="ERR3">Nenhum erro deve ser silenciado (ex: `try-catch` vazio ou `console.error` sem propagação).</rule>
+      <rule id="ERR4">Usar tipos de erro específicos definidos em `errors.ts` para clareza e rastreabilidade.</rule>
+      <rule id="ERR5">Erros de UI devem ser apresentados ao usuário via `ErrorBox` ou similar, sem interromper a execução do programa.</rule>
+    </rules>
+    <few_shot_error_examples>
+      <example label="Tratamento de Erro em Leitura de Arquivo">
+        <before comment="PROIBIDO — Exceções não tratadas explicitamente; acoplamento ao mecanismo de exceção.">
+          ```typescript
+          import { promises as fs } from 'fs';
+          async function readConfig(path: string) {
+            const data = await fs.readFile(path, 'utf8');
+            return JSON.parse(data);
+          }
+          ```
+        </before>
+        <after comment="CORRETO — Erro como valor retornado, tipagem explícita.">
+          ```typescript
+          import { Ok, Err, Result } from '../utils/result';
+          import { FileReadError, JsonParseError } from '../utils/errors';
+          import { BunFileError } from '../utils/errors'; // Usando erro Bun específico
+          import { Bun } from 'bun';
+
+          async function readConfigFile(path: string): Promise<Result<any, FileReadError | JsonParseError>> {
+            try {
+              const file = Bun.file(path);
+              if (!await file.exists()) {
+                return Err(new FileReadError(`Arquivo não encontrado: ${path}`));
+              }
+              const data = await file.text();
+              const parsed = JSON.parse(data);
+              return Ok(parsed);
+            } catch (e: any) {
+              if (e instanceof SyntaxError) {
+                return Err(new JsonParseError(`Erro ao parsear JSON: ${e.message}`));
+              }
+              return Err(new BunFileError(`Falha ao ler arquivo Bun: ${e.message}`)); // Erro mais específico para Bun
+            }
+          }
+          ```
+        </after>
+      </example>
+    </few_shot_error_examples>
+    <validation>
+      Confirme que em nenhum serviço ou componente que lida com I/O ou chamadas externas existe um `throw` sem um `try-catch` explícito resultando em `Result`, ou um `try-catch` que engole erros sem tratá-los ou propagá-los adequadamente como `Result`.
+    </validation>
+  </error_handling_pattern>
+
+  <constraints>
+    <rule>O sistema deve continuar sendo uma aplicação TUI, utilizando OpenTUI e React.</rule>
+    <rule>A stack principal (Bun, TypeScript, React, OpenTUI, Zod, OpenRouter API) deve ser mantida, sem introdução de novas bibliotecas de grande porte, a menos que estritamente necessário para resolver um problema de manutenibilidade identificado.</rule>
+    <rule>A base de código deve permanecer em TypeScript e aderir a um `tsconfig.json` com `strict: true`.</rule>
+    <rule>As alterações devem ser preferencialmente retrocompatíveis com a estrutura de arquivos de configuração (`config/`, `templates/`) existente, ou prover um plano de migração claro.</rule>
+    <rule>As refatorações não devem introduzir regressões funcionais ou visuais na interface do usuário.</rule>
+    <rule>A refatoração deve priorizar a clareza do código, a separação de responsabilidades e a testabilidade.</rule>
+  </constraints>
+
+  <expected_output>
+    <format>
+      Um plano de refatoração detalhado, apresentado em formato de documentação markdown, contendo:
+      1. Introdução e motivação para a refatoração.
+      2. Sumário das inconsistências e problemas identificados ("vibe coding").
+      3. Propostas de refatoração para cada problema, justificadas com Padrões de Projeto e Melhores Práticas.
+      4. Um roadmap priorizado para a implementação.
+      5. Exemplos de código (em TypeScript) para as refatorações mais críticas (Ex: `MainMenu.tsx`, `FileService`, tipagem de callbacks).
+      6. Um plano de validação para as mudanças.
+      Tudo deve usar os insights das seções Chain of Thought, Tree of Thoughts, Self-Consistency e Maieutic Prompting.
+    </format>
+    <quality_bar>
+      - Clareza e objetividade na descrição dos problemas e soluções.
+      - Uso consistente da terminologia de engenharia de software e padrões de projeto.
+      - As propostas devem ser pragmáticas e implementáveis no contexto do projeto.
+      - Os exemplos de código devem ser concisos, corretos e demonstrar claramente a melhoria.
+      - A refatoração proposta deve melhorar significativamente a manutenibilidade e a escalabilidade do sistema.
+      - Todas as inconsistências mencionadas na `project_patterns` devem ser abordadas com uma proposta de solução.
+    </quality_bar>
+  </expected_output>
+
+<project_patterns>
+## Análise de Projeto: Replication TUI Generator
+
+### Stack de Tecnologias
+
+O projeto "Replication TUI Generator" utiliza a seguinte stack de tecnologias:
+
+**Frontend (TUI):**
+*   **OpenTUI:** Framework para construir Terminal User Interfaces.
+    *   **@opentui/react:** Reconciliador React para OpenTUI, permitindo o uso de JSX, hooks e componentes React.
+*   **React 19:** Biblioteca principal para construção da interface de usuário.
+
+**Backend (Runtime & Build):**
+*   **Bun 1.0+:** Runtime JavaScript rápido, utilizado para execução, gerenciamento de pacotes e build.
+*   **TypeScript 5.9+:** Linguagem de programação para garantir tipagem estática e segurança.
+*   **Zod:** Biblioteca para validação de schemas, aplicada na validação de configurações.
+
+**API Externa:**
+*   **OpenRouter API:** Utilizada para acessar e interagir com diversos modelos de IA (ex: Google Gemini, Anthropic Claude, OpenAI GPT).
+
+**Outras Ferramentas/Bibliotecas:**
+*   **chalk:** Para estilização de saída de texto no terminal (embora o OpenTUI já ofereça estilização via componentes).
+*   **fs/promises (Node.js/Bun built-in):** Para operações de sistema de arquivos (leitura, escrita, criação de diretórios).
+*   **path (Node.js/Bun built-in):** Para manipulação de caminhos de arquivo/diretório.
+*   **os (Node.js/Bun built-in):** Para acessar informações do sistema operacional, como o diretório do usuário (`homedir`).
+
+### Padrões de Arquitetura e Design Utilizados
+
+1.  **Component-Based Architecture (React):** A UI é construída como uma árvore de componentes reusáveis (ex: `MainMenu`, `NewPrompt`, `Layout`). Cada componente encapsula sua lógica e renderização.
+2.  **Modular Monolith:** A estrutura de pastas (`src/components`, `src/screens`, `src/services`, `src/utils`, `src/types`) sugere uma modularização clara das responsabilidades, mesmo sendo uma aplicação única.
+3.  **Injeção de Dependências (Implícita):** Serviços como `ConfigService`, `FileService`, `OpenRouterService` são importados e utilizados diretamente pelos componentes e por outros serviços, mas não há um container de DI explícito.
+4.  **Service Layer:** O projeto possui uma camada de serviços (`src/services`) que abstrai a lógica de negócio e as interações com recursos externos (API de IA, sistema de arquivos, configuração). Isso promove a separação de preocupações.
+5.  **Configuração por Arquivos:** Menus, formatos, técnicas e templates são carregados de arquivos JSON e XML na pasta `config`, tornando a aplicação flexível e extensível sem modificação do código.
+6.  **Go-style Error Handling (Result Type):** Um padrão de tratamento de erros inspirado em Go (`Result<T, E>`) é implementado (`src/utils/result.ts`). Isso força o tratamento explícito de erros como valores retornados, em vez de exceções.
+7.  **Single Source of Truth (SSoT) para UI Texts:** O uso de `config/menus.json` para todos os textos de menu, labels e mensagens de UI centraliza esses textos, facilitando a manutenção e futuras internacionalizações.
+
+### Inconsistências Detectadas
+
+1.  **Dependência `chalk`:** O `chalk` está listado nas dependências do `package.json`, mas não parece ser usado em nenhum dos arquivos fornecidos. O OpenTUI e o React já oferecem mecanismos robustos para estilização de texto no terminal (via `fg`, `bg` nos componentes `<text>` e `<span>`). A presença de `chalk` é redundante e pode ser removida se não houver uso oculto.
+2.  **`process.exit(0)` em `MainMenu.tsx`:** Na função `handleSelect`, quando a opção "Exit" é escolhida, `process.exit(0)` é chamado diretamente. O próprio documento `SKILL.md` e `react/gotchas.md` enfatizam a importância de *nunca* usar `process.exit()` diretamente no OpenTUI, mas sim `renderer.destroy()` para garantir a limpeza adequada do terminal. Esta é uma inconsistência crítica com as boas práticas do OpenTUI.
+3.  **`import "fs/promises"` vs. `Bun.file()`/`Bun.write()`:** Embora o projeto use Bun, e o Bun ofereça suas próprias APIs otimizadas para I/O de arquivos (`Bun.file()`, `Bun.write()`), a maioria das operações de arquivo em `ConfigService`, `ContextService` e `FileService` usa `fs/promises` do Node.js. Isso é funcional no Bun (devido à sua compatibilidade com a API do Node.js), mas irônico dado que as referências do OpenTUI (`core/gotchas.md`) recomendam preferir as APIs nativas do Bun quando possível.
+4.  **`setXXX(val: any)` em `input` `onSubmit`:** Nos componentes de `input` em `NewPrompt`, `GenerateContext`, `ProjectPattern` e `Settings`, o retorno `val` do `onSubmit` do `input` (`onInput` na verdade) é tipado como `any`. Isso enfraquece a tipagem, especialmente porque o valor é uma string.
+5.  **`Layout.tsx` vs. `App.tsx` responsabilidade de tela:** O `App.tsx` decide qual tela renderizar (`renderScreen()`), mas o `Layout.tsx` define `screenTitles` e `screenHelp`. Idealmente, as especificações de cada tela (título, ajuda) deveriam estar com a própria tela ou em um arquivo de configuração, não no componente de layout que não "conhece" as telas.
+6.  **Tipagem de `CustomSelect.tsx`:** As props `onSelect` recebem `item: any`. Embora o `SelectOption` seja definido, ele não é usado na tipagem do argumento, enfraquecendo a segurança de tipo.
+7.  **`OpenRouterService` `modelOverride` default value:** Na função `generate`, `modelOverride || config.model || "google/gemini-2.5-flash"` coloca um modelo padrão hardcoded. Essa é uma possível inconsistência com o princípio de "configuração por arquivos", pois esse valor padrão não vem de `config/menus.json` ou `config/formats.json` e poderia ser configurável.
+8.  **`selectedTechs` gerenciamento em `NewPrompt.tsx`:** O método para `selectedTechs` (`find` e `filter`) é eficaz, mas a lógica de seleção/desseleção (incluindo a lógica de teclado) é um pouco verbosa. Poderia ser encapsulada em um hook personalizado ou componente `MultiSelect` mais genérico.
+
+### Recomendações e Boas Práticas Adotadas
+
+1.  **Strict Mode (TypeScript):** O `tsconfig.json` define `strict: true`, garantindo que o código TypeScript seja rigoroso, capturando muitos erros potenciais em tempo de compilação.
+2.  **Modularização Clara:** A organização das pastas (`components`, `screens`, `services`, `utils`, `types`) é um bom exemplo de separação de responsabilidades.
+3.  **Tratamento de Erros "Go-style":** A implementação do padrão `Result<T,E>` é uma excelente prática para gerenciar erros de forma explícita e robusta, evitando o uso de `throw`/`try-catch` em lógica de negócio e promovendo uma rastreabilidade mais clara da origem dos erros.
+4.  **Composição de UI com React:** Usa os padrões modernos do React para construir interfaces interativas no terminal, incluindo `useState`, `useEffect` e componentes funcionais.
+5.  **Configuração Externa:** A leitura de configurações e dados de UI de arquivos JSON (`config/menus.json`, `config/formats.json`, `config/techniques.json`) torna o aplicativo altamente configurável e fácil de adaptar ou estender sem alterar o código.
+6.  **Inputs Controlados:** O uso de estados (`useState`) para gerenciar os valores de inputs (`setTask`, `setInstruction`, `setApiKey`, etc.) garante que os inputs sejam controlados por React, facilitando a validação e o fluxo de dados.
+7.  **Hooks Customizados para Eventos:** O `useKeyboard` do `@opentui/react` é usado de forma consistente para lidar com a navegação e ações baseadas no teclado.
+8.  **Feedback Visual:** O uso de `LoadingBox`, `SuccessBox`, `ErrorBox` e `StepIndicator` (`components/StatusBox.tsx`, `components/StepIndicator.tsx`) fornece feedback visual claro ao usuário durante operações assíncronas e passos do fluxo.
+9.  **Geração Dinâmica de Prompts:** A lógica em `PromptBuilder.ts` e `TemplateService.ts` demonstra uma abordagem modular para construir prompts para a IA, combinando templates, técnicas e contexto.
+10. **Validação com Zod:** Usado para garantir que a configuração lida do disco esteja no formato esperado, aumentando a resiliência da aplicação.
+
+### Recomendações Adicionais
+
+1.  **Corrigir `process.exit()`:** Substituir `process.exit(0)` em `MainMenu.tsx` por uma chamada a `renderer.destroy()` seguida por uma saída com o código de sucesso, conforme a documentação do OpenTUI. É crucial para o comportamento limpo do terminal.
+2.  **Remover `chalk`:** Conforme a análise, o `chalk` é provavelmente redundante e deve ser removido das dependências.
+3.  **Padronizar APIs de arquivo para Bun:** Considerar refatorar `ConfigService`, `ContextService` e `FileService` para usar as APIs nativas do Bun (ex: `Bun.file().json()`, `Bun.write()`, `Bun.gc()`) onde for aplicável e benéfico para consistência e performance.
+4.  **Tipagem Estrita nos Event Handlers:** Corrigir a tipagem de `val: any` em `onSubmit` para (`val: string`) e em `onSelect` para `item: SelectOption` para aproveitar a tipagem do TypeScript.
+5.  **Centralizar títulos e ajuda das telas:** Mover as informações de `screenTitles` e `screenHelp` para os JSONs de configuração (`menus.json` ou um novo `screens.json`), e carregar essas informações dinamicamente no `Layout.tsx` ou injetá-las de alguma forma. Isso desacoplaria o layout de detalhes específicos de cada tela.
+6.  **Criar Componente `MultiSelect`:** A lógica de seleção múltipla em `NewPrompt.tsx` (`setTechIndex`, `setSelectedTechs`) poderia ser encapsulada em um componente reutilizável (`<MultiSelect />`) para reduzir a duplicação de código e melhorar a legibilidade.
+7.  **`Input` `onSubmit` vs `onInput`:** O input (`opentui/react input`) tem `onInput` para cada mudança de valor e `onSubmit` para quando o Enter é pressionado. O código atual mistura os dois para avanço de passo. Para clareza, sempre usar `onInput` para atualização de estado e `onSubmit` **apenas** para o avanço/confirmação.
+8.  **Constante para Modelo Padrão:** O modelo padrão hardcoded em `OpenRouterService.generate` (`"google/gemini-2.5-flash"`) deveria vir de `config/menus.json` ou de uma constante em `ConfigService`, seguindo o princípio da configuração externa.
+9.  **Modularização de Regras de Prompt:** As regras de composição de prompt em `PromptBuilder.ts` (`if (format.id === "xml")... else`) são um bom começo. Poderia-se criar um "registrador" de formatos ou estratégias para tornar essa escolha mais dinâmica e extensível.
+10. **Aprimorar UX de Leitura:** O `ViewPrompts.tsx` corta o conteúdo do prompt e usa `substring(0, 1000)`. Implementar um `ScrollBoxRenderable` do OpenTUI para o display do conteúdo completo do prompt, ou um mecanismo de paginação, ofereceria uma melhor experiência de leitura para prompts maiores. O uso de `scrollOffset` é um bom começo, mas o `ScrollBoxRenderable` do OpenTUI é mais completo.
+11. **Refatorar Lógica de Modo em `NewPrompt`:** A lógica de `patternsMode` e `contextMode` com `if (!patternsMode)` / `MenuSelect` / `if (item?.value === "skip") setStep(5);` e os `useState` complexos pode ser simplificada usando um `Switch/Match` do Solid.js (`@opentui/solid`) se o projeto fosse migrado, ou um `if/else if/else` mais estruturado no React para diferentes estágios do `patternsMode` e `contextMode`. A transição `setStep(5)` imediata em "skip" dentro do `onSelect` dificulta o controle do fluxo.
+</project_patterns>
+
+<project_context>
+O projeto "Replication" é uma aplicação de Terminal User Interface (TUI) construída com Bun, React e OpenTUI, focada em auxiliar na geração de prompts profissionais para modelos de IA.
+
+**Estrutura do Projeto:**
+
+- **`config/`**: Contém arquivos de configuração em formato JSON e templates de prompt em XML e Markdown. Essa estrutura permite a customização da aplicação sem a necessidade de alterar o código-fonte.
+    - `formats.json`: Define os formatos de saída disponíveis para os prompts (XML, Markdown, Texto Simples), incluindo descrição de suas vantagens.
+    - `menus.json`: Configura os itens de menu e labels da UI.
+    - `techniques.json`: Lista as técnicas de prompt engineering suportadas, com ID, nome, descrição e template associado.
+    - `templates/`: Armazena os templates base para a geração de prompts em diferentes formatos.
+- **`src/`**: Contém o código-fonte principal da aplicação.
+    - `App.tsx`: Componente raiz que gerencia a navegação entre as diferentes telas da aplicação.
+    - `components/`: Componentes React reutilizáveis que constroem a interface do usuário (Layout, StatusBox, CustomSelect, ScreenContainer, StepIndicator).
+    - `screens/`: Componentes que representam as telas da aplicação (MainMenu, NewPrompt, ViewPrompts, Settings, GenerateContext, ProjectPattern).
+    - `services/`: Módulos responsáveis pela lógica de negócio, como interação com a API do OpenRouter (`OpenRouterService`), gerenciamento de arquivos (`FileService`), construção de prompts (`PromptBuilder`), leitura de contexto (`ContextService`), e gerenciamento de configurações (`ConfigService`).
+    - `types/`: Definições de tipos TypeScript para as interfaces de dados utilizadas na aplicação (Technique, Format, AppConfig, SavedPrompt).
+    - `utils/`: Utilitários e helpers, incluindo um módulo crucial para tratamento de erros no "estilo Go" (`result.ts`), que define tipos `Result`, `Ok` e `Err`, juntamente com funções auxiliares e tipos de erro customizados (`errors.ts`).
+- **`package.json`**: Define as dependências do projeto, scripts de execução e informações básicas do pacote.
+- **`tsconfig.json`**: Configura o compilador TypeScript, incluindo suporte a JSX para React e OpenTUI.
+- **`README.md`**: Fornece uma visão geral da aplicação, funcionalidades, requisitos, instalação e uso.
+- **`prompt.xml`**: Um prompt de exemplo que foi gerado para a própria aplicação Replication, demonstrando as técnicas e a estrutura desejada.
+
+**Stack Principal:**
+
+- **Runtime:** Bun (para execução e gerenciamento de pacotes).
+- **Framework de TUI:** OpenTUI (biblioteca de interface de usuário para terminal).
+- **Biblioteca de UI:** React 19 (utilizada com o reconciler do OpenTUI para construir a interface).
+- **Linguagem:** TypeScript (para tipagem estática e segurança de código).
+- **Validação de Schemas:** Zod (para validação de configurações e dados).
+- **API de IA:** OpenRouter (para acesso a diversos modelos de LLM, como Google Gemini e Anthropic Claude).
+
+**Propósito:**
+
+O "Replication TUI Generator" tem como objetivo simplificar a criação de prompts de alta qualidade para modelos de linguagem. Ele faz isso ao:
+
+1.  **Oferecer uma interface de usuário interativa no terminal (TUI)**: Tornando a criação de prompts acessível via linha de comando.
+2.  **Abstrair e aplicar técnicas avançadas de Prompt Engineering**: Permitindo que o usuário selecione técnicas como Role Prompting, Chain-of-Thought, Few-Shot, etc., sem precisar entender a sintaxe exata de cada uma.
+3.  **Gerar prompts estruturados**: Os prompts podem ser gerados em formatos como XML ou Markdown, facilitando o consumo por outras ferramentas ou uma melhor compreensão.
+4.  **Assisted Context and Pattern Generation**: Permite que o usuário forneça um caminho para um projeto, e a IA analisa os arquivos para gerar um contexto ou identificar padrões de projeto, que podem ser incorporados nos prompts.
+5.  **Gerenciamento de Configurações**: Facilita a configuração da chave de API da IA, diretório de saída e modelo preferido.
+6.  **Tratamento robusto de erros**: Implementa um padrão de tratamento de erros no "estilo Go" utilizando tipos `Result`, o que garante a robustez e a rastreabilidade de falhas em toda a aplicação.
+
+Em resumo, é uma ferramenta para desenvolvedores e engenheiros de prompt que buscam otimizar suas interações com LLMs, garantindo prompts mais eficazes e resultados mais consistentes, tudo a partir da conveniência de um terminal.
+</project_context>
+
+</prompt>

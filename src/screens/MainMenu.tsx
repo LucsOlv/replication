@@ -1,21 +1,17 @@
 import { useState, useEffect } from "react";
+import { useRenderer } from "@opentui/react";
 import { FileService } from "../services/FileService";
 import { ScreenContainer } from "../components/ScreenContainer";
-import { CardSelect } from "../components/CustomSelect";
+import { CardSelect, SelectOption } from "../components/CustomSelect";
 import { join } from "path";
 
 interface Props {
   onNavigate: (screen: string) => void;
 }
 
-interface MenuOption {
-  name: string;
-  description?: string;
-  value: string;
-}
-
 export function MainMenu({ onNavigate }: Props) {
-  const [menus, setMenus] = useState<MenuOption[]>([]);
+  const renderer = useRenderer();
+  const [menus, setMenus] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +21,7 @@ export function MainMenu({ onNavigate }: Props) {
       if (result.ok) {
         try {
           const data = JSON.parse(result.value);
-          const options: MenuOption[] = data.mainMenu.map((m: any) => ({
+          const options: SelectOption[] = data.mainMenu.map((m: any) => ({
             name: m.label,
             value: m.value,
           }));
@@ -42,7 +38,7 @@ export function MainMenu({ onNavigate }: Props) {
     loadMenus();
   }, []);
 
-  function getDefaultMenus(): MenuOption[] {
+  function getDefaultMenus(): SelectOption[] {
     return [
       { name: "Gerar Novo Prompt", description: "Criar prompt com IA", value: "NewPrompt" },
       { name: "Ver Prompts Existentes", description: "Listar prompts salvos", value: "ViewPrompts" },
@@ -53,8 +49,9 @@ export function MainMenu({ onNavigate }: Props) {
     ];
   }
 
-  const handleSelect = (item: any) => {
+  const handleSelect = (item: SelectOption) => {
     if (item.value === "Exit") {
+      renderer.destroy();
       process.exit(0);
     } else {
       onNavigate(item.value);

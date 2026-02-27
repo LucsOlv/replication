@@ -1,0 +1,50 @@
+{
+    "screens": {
+        "MainMenu": {
+            "title": "Menu Principal",
+            "help": [
+                "↑↓ Navegar",
+                "Enter Selecionar"
+            ]
+        },
+        "NewPrompt": {
+            "title": "Novo Prompt",
+            "help": [
+                "↑↓ Navegar",
+                "Space Selecionar",
+                "Enter Confirmar",
+                "Ctrl+E IA",
+                "Esc Voltar"
+            ]
+        },
+        "ViewPrompts": {
+            "title": "Prompts Salvos",
+            "help": [
+                "↑↓ Navegar",
+                "Enter Abrir",
+                "Esc Voltar"
+            ]
+        },
+        "Settings": {
+            "title": "Configuracoes",
+            "help": [
+                "Enter Avancar",
+                "Esc Voltar"
+            ]
+        },
+        "GenerateContext": {
+            "title": "Gerar Contexto",
+            "help": [
+                "Enter Avancar",
+                "Esc Voltar"
+            ]
+        },
+        "ProjectPattern": {
+            "title": "Padrao de Projeto",
+            "help": [
+                "Enter Avancar",
+                "Esc Voltar"
+            ]
+        }
+    }
+}

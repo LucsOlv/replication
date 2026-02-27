@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useAppStore } from "./store/useAppStore";
 import { MainMenu } from "./screens/MainMenu";
 import { NewPrompt } from "./screens/NewPrompt";
 import { ViewPrompts } from "./screens/ViewPrompts";
@@ -7,32 +8,28 @@ import { GenerateContext } from "./screens/GenerateContext";
 import { ProjectPattern } from "./screens/ProjectPattern";
 import { Layout } from "./components/Layout";
 import { ErrorBox } from "./components/StatusBox";
-import { ConfigService } from "./services/ConfigService";
-import { AppConfig } from "./types";
-import { homedir } from "os";
+import { FileService } from "./services/FileService";
 import { join } from "path";
 
 type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "GenerateContext" | "ProjectPattern" | "Settings";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("MainMenu");
-  const [config, setConfig] = useState<AppConfig | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { config, currentScreen, error, setCurrentScreen, loadInitialConfig } = useAppStore();
+  const [screensConfig, setScreensConfig] = useState<Record<string, {title: string, help: string[]}>>({});
 
   useEffect(() => {
-    async function loadConfig() {
-      const result = await ConfigService.load();
-      if (!result.ok) {
-        setConfig({
-          apiKey: "",
-          outputDir: join(homedir(), "replication-prompts"),
-          model: "google/gemini-2.5-flash",
-        });
-      } else {
-        setConfig(result.value);
+    async function init() {
+      await loadInitialConfig();
+
+      const screensResult = await FileService.readFile(join(process.cwd(), "config", "screens.json"));
+      if (screensResult.ok) {
+        try {
+          const data = JSON.parse(screensResult.value);
+          setScreensConfig(data.screens || {});
+        } catch {}
       }
     }
-    loadConfig();
+    init();
   }, []);
 
   if (!config) {
@@ -46,8 +43,7 @@ export default function App() {
   }
 
   const navigate = (screen: string) => {
-    setCurrentScreen(screen as Screen);
-    setError(null);
+    setCurrentScreen(screen as any);
   };
 
   const renderScreen = () => {
@@ -59,22 +55,24 @@ export default function App() {
       case "MainMenu":
         return <MainMenu onNavigate={navigate} />;
       case "NewPrompt":
-        return <NewPrompt config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+        return <NewPrompt onBack={() => navigate("MainMenu")} />;
       case "ViewPrompts":
-        return <ViewPrompts config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+        return <ViewPrompts onBack={() => navigate("MainMenu")} />;
       case "Settings":
-        return <Settings config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+        return <Settings onBack={() => navigate("MainMenu")} />;
       case "GenerateContext":
-        return <GenerateContext config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+        return <GenerateContext onBack={() => navigate("MainMenu")} />;
       case "ProjectPattern":
-        return <ProjectPattern config={config} onBack={() => navigate("MainMenu")} onError={setError} />;
+        return <ProjectPattern onBack={() => navigate("MainMenu")} />;
       default:
         return <MainMenu onNavigate={navigate} />;
     }
   };
 
+  const screenConf = screensConfig[currentScreen] || { title: currentScreen, help: [] };
+
   return (
-    <Layout currentScreen={currentScreen}>
+    <Layout title={screenConf.title} help={screenConf.help}>
       {renderScreen()}
     </Layout>
   );

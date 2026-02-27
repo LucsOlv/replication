@@ -1,7 +1,7 @@
 import { join } from "path";
 import { Technique, Format } from "../types";
 import { Result, ok, err } from "../utils/result";
-import { FileSystemError, OpenRouterError } from "../utils/errors";
+import { BunFileError, OpenRouterError } from "../utils/errors";
 import { FileService } from "./FileService";
 import { TemplateService } from "./TemplateService";
 import { OpenRouterService } from "./OpenRouterService";
@@ -14,32 +14,34 @@ export class PromptBuilder {
     techniques: Technique[],
     patterns?: string,
     context?: string
-  ): Promise<Result<string, FileSystemError | OpenRouterError | Error>> {
+  ): Promise<Result<string, BunFileError | OpenRouterError | Error>> {
 
-    // 1. Build the composed template using TemplateService
-    let composedPrompt: string;
-
-    if (format.id === "xml") {
-      const templateResult = await TemplateService.buildFromTechniques(
-        task,
-        instruction,
-        techniques,
-        patterns,
-        context
-      );
-      if (!templateResult.ok) {
-        return err(templateResult.error);
-      }
-      composedPrompt = templateResult.value;
-    } else {
-      composedPrompt = TemplateService.buildMarkdownFromTechniques(
-        task,
-        instruction,
-        techniques,
-        patterns,
-        context
-      );
+    interface FormatStrategy {
+      build(task: string, instruction: string, techniques: Technique[], patterns?: string, context?: string): Promise<Result<string, Error>> | Result<string, Error>;
     }
+
+    const formatStrategies: Record<string, FormatStrategy> = {
+      xml: {
+        build: async (t, i, tech, p, c) => {
+          return await TemplateService.buildFromTechniques(t, i, tech, p, c);
+        }
+      },
+      markdown: {
+        build: (t, i, tech, p, c) => {
+          const result = TemplateService.buildMarkdownFromTechniques(t, i, tech, p, c);
+          return ok(result);
+        }
+      }
+    };
+
+    const strategy = formatStrategies[format.id] || formatStrategies["markdown"];
+    const templateResult = await strategy.build(task, instruction, techniques, patterns, context);
+
+    if (!templateResult.ok) {
+      return err(templateResult.error);
+    }
+
+    const composedPrompt = templateResult.value;
 
     // 2. Call AI to generate the final prompt
     const metaPrompt = `Você é um especialista em prompt engineering. Abaixo está um template estruturado com placeholders no formato {{PLACEHOLDER}}. Sua tarefa é:
@@ -68,7 +70,7 @@ ${composedPrompt}`;
     task: string,
     format: Format,
     outputDir: string
-  ): Promise<Result<string, FileSystemError | Error>> {
+  ): Promise<Result<string, BunFileError | Error>> {
     const slug = task.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const timestamp = Date.now();
     const ext = format.id === "xml" ? "xml" : (format.id === "markdown" ? "md" : "txt");

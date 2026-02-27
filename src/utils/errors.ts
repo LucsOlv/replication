@@ -29,3 +29,19 @@ export class ValidationError extends Error {
     this.name = "ValidationError";
   }
 }
+
+export class BunFileError extends Error {
+  readonly type = "bunfile";
+  constructor(message: string) {
+    super(message);
+    this.name = "BunFileError";
+  }
+}
+
+export class JsonParseError extends Error {
+  readonly type = "jsonparse";
+  constructor(message: string) {
+    super(message);
+    this.name = "JsonParseError";
+  }
+}

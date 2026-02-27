@@ -1,0 +1,26 @@
+﻿[0m[1mbun test [0m[2mv1.3.1 (89fa0f34)[0m
+
+
+-- DUMP XML --
+>> LLM PROMPT GENERATED MOCK <<
+
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt version="1.0" name="Codar JS">
+
+
+  <task>Use react</task>
+
+
+  <constraints>No limits</constraints>
+
+
+  <expected_output>JSON</expected_output>
+
+<project_patterns>
+Alguns padroes XML.
+</project_patterns>
+
+</prompt>
+-- END DUMP --
+
+

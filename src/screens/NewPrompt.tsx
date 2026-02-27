@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useAppStore } from "../store/useAppStore";
+import { usePromptStore } from "../store/usePromptStore";
 import { AppConfig, Format, Technique } from "../types";
 import { FileService } from "../services/FileService";
 import { OpenRouterService } from "../services/OpenRouterService";
@@ -7,49 +9,44 @@ import { PromptBuilder } from "../services/PromptBuilder";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { StepIndicator } from "../components/StepIndicator";
 import { LoadingBox, SuccessBox, ErrorBox } from "../components/StatusBox";
-import { MenuSelect } from "../components/CustomSelect";
+import { MenuSelect, MultiSelect } from "../components/CustomSelect";
 import { join } from "path";
 import { useKeyboard } from "@opentui/react";
 
 interface Props {
-  config: AppConfig;
   onBack: () => void;
-  onError: (msg: string) => void;
 }
 
 type InputMode = "skip" | "manual" | "read" | null;
 
-export function NewPrompt({ config, onBack, onError }: Props) {
-  const [step, setStep] = useState(1);
-  const [task, setTask] = useState("");
-  const [formats, setFormats] = useState<Format[]>([]);
-  const [format, setFormat] = useState<Format | null>(null);
-  
-  const [techniquesList, setTechniquesList] = useState<Technique[]>([]);
-  const [selectedTechs, setSelectedTechs] = useState<Technique[]>([]);
-  const [techIndex, setTechIndex] = useState(0);
-  
-  // Patterns state
-  const [patternsMode, setPatternsMode] = useState<InputMode>(null);
-  const [patternsPath, setPatternsPath] = useState(process.cwd());
-  const [patternsText, setPatternsText] = useState("");
-  const [isProcessingPatterns, setIsProcessingPatterns] = useState(false);
-  const [patternsFiles, setPatternsFiles] = useState<string[]>([]);
-  
-  // Context state
-  const [contextMode, setContextMode] = useState<InputMode>(null);
-  const [contextPath, setContextPath] = useState(process.cwd());
-  const [contextText, setContextText] = useState("");
-  const [isProcessingContext, setIsProcessingContext] = useState(false);
-  const [contextFiles, setContextFiles] = useState<string[]>([]);
-  
-  const [instruction, setInstruction] = useState("");
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  
-  // Generation & Preview
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPrompt, setGeneratedPrompt] = useState("");
-  const [resultPath, setResultPath] = useState("");
+export function NewPrompt({ onBack }: Props) {
+  const { config, setError } = useAppStore();
+  const promptStore = usePromptStore();
+
+  const {
+    step, setStep,
+    task, setTask,
+    formats, setFormats,
+    format, setFormat,
+    techniquesList, setTechniquesList,
+    selectedTechs, setSelectedTechs,
+    patternsMode, setPatternsMode,
+    patternsPath, setPatternsPath,
+    patternsText, setPatternsText,
+    isProcessingPatterns, setIsProcessingPatterns,
+    patternsFiles, setPatternsFiles,
+    contextMode, setContextMode,
+    contextPath, setContextPath,
+    contextText, setContextText,
+    isProcessingContext, setIsProcessingContext,
+    contextFiles, setContextFiles,
+    instruction, setInstruction,
+    isEnhancing, setIsEnhancing,
+    isGenerating, setIsGenerating,
+    generatedPrompt, setGeneratedPrompt,
+    resultPath, setResultPath,
+    resetPrompt
+  } = promptStore;
 
   useEffect(() => {
     async function loadData() {
@@ -64,21 +61,8 @@ export function NewPrompt({ config, onBack, onError }: Props) {
   useKeyboard((key) => {
     if (key.name === "escape") {
       // Allow escape from preview too
+      resetPrompt();
       onBack();
-    }
-
-    if (step === 3) {
-      if (key.name === "up") setTechIndex(Math.max(0, techIndex - 1));
-      if (key.name === "down") setTechIndex(Math.min(techniquesList.length - 1, techIndex + 1));
-      if (key.name === "space") {
-        const t = techniquesList[techIndex];
-        if (selectedTechs.find((x) => x.id === t.id)) {
-          setSelectedTechs(selectedTechs.filter((x) => x.id !== t.id));
-        } else {
-          setSelectedTechs([...selectedTechs, t]);
-        }
-      }
-      if (key.name === "return") setStep(4);
     }
     
     // Patterns Enter reading mode
@@ -101,14 +85,17 @@ export function NewPrompt({ config, onBack, onError }: Props) {
       if (key.name === "r") handleGenerate(instruction);
     }
 
-    if (step === 8 && key.name === "return") onBack();
+    if (step === 8 && key.name === "return") {
+      resetPrompt();
+      onBack();
+    }
   });
 
   const handleEnhance = async () => {
     setIsEnhancing(true);
     const res = await OpenRouterService.enhanceInstruction(instruction);
     if (res.ok) setInstruction(res.value);
-    else onError(res.error.message);
+    else setError(res.error.message);
     setIsEnhancing(false);
   };
 
@@ -119,7 +106,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
     if (res.ok) {
       setPatternsFiles(res.value);
     } else {
-      onError(res.error.message);
+      setError(res.error.message);
     }
   };
 
@@ -127,7 +114,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
     setIsProcessingPatterns(true);
     const contentRes = await ContextService.getContextString(patternsFiles);
     if (!contentRes.ok) {
-      onError(contentRes.error.message);
+      setError(contentRes.error.message);
       setIsProcessingPatterns(false);
       return;
     }
@@ -139,7 +126,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
       setPatternsText(iaRes.value);
       setStep(5);
     } else {
-      onError(iaRes.error.message);
+      setError(iaRes.error.message);
     }
     setIsProcessingPatterns(false);
   };
@@ -151,7 +138,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
     if (res.ok) {
       setContextFiles(res.value);
     } else {
-      onError(res.error.message);
+      setError(res.error.message);
     }
   };
 
@@ -159,7 +146,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
     setIsProcessingContext(true);
     const contentRes = await ContextService.getContextString(contextFiles);
     if (!contentRes.ok) {
-      onError(contentRes.error.message);
+      setError(contentRes.error.message);
       setIsProcessingContext(false);
       return;
     }
@@ -171,7 +158,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
       setContextText(iaRes.value);
       setStep(6);
     } else {
-      onError(iaRes.error.message);
+      setError(iaRes.error.message);
     }
     setIsProcessingContext(false);
   };
@@ -197,13 +184,15 @@ export function NewPrompt({ config, onBack, onError }: Props) {
       setGeneratedPrompt(res.value);
       setStep(7); // Go to preview
     } else {
-      onError(res.error.message);
+      setError(res.error.message);
     }
     setIsGenerating(false);
   };
 
   const handleSave = async () => {
     setIsGenerating(true);
+    if (!config) return;
+
     const res = await PromptBuilder.save(
       generatedPrompt,
       task,
@@ -215,7 +204,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
       setResultPath(res.value);
       setStep(8);
     } else {
-      onError(res.error.message);
+      setError(res.error.message);
     }
     setIsGenerating(false);
   };
@@ -243,11 +232,8 @@ export function NewPrompt({ config, onBack, onError }: Props) {
             <input
               value={task}
               focused
-              onInput={setTask}
-              onSubmit={(val: any) => {
-                setTask(val);
-                setStep(2);
-              }}
+              onChange={setTask}
+              onSubmit={() => setStep(2)}
             />
           </box>
         </box>
@@ -281,15 +267,12 @@ export function NewPrompt({ config, onBack, onError }: Props) {
             <span style={{ fg: "gray" }}>(Espaco para selecionar, Enter para confirmar)</span>
           </text>
           <box flexDirection="column" gap={0}>
-            {techniquesList.map((t, i) => (
-              <text key={t.id}>
-                <span style={{ fg: i === techIndex ? "magenta" : "white" }}>
-                  {selectedTechs.find((x) => x.id === t.id) ? " ◉ " : " ○ "}
-                  {t.name}
-                  <span style={{ fg: "gray" }}> - {t.description}</span>
-                </span>
-              </text>
-            ))}
+            <MultiSelect
+              options={techniquesList.map(t => ({ name: t.name, description: t.description, value: t.id }))}
+              selectedValues={selectedTechs.map(t => t.id)}
+              onChange={(vals: string[]) => setSelectedTechs(techniquesList.filter(t => vals.includes(t.id)))}
+              onSubmit={() => setStep(4)}
+            />
           </box>
         </box>
       )}
@@ -315,7 +298,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
                <text>
                  <span style={{ fg: "gray" }}>Digite ou cole os padrões (Enter para concluir):</span>
                </text>
-               <input value={patternsText} focused onInput={setPatternsText} onSubmit={() => setStep(5)} />
+               <input value={patternsText} focused onChange={setPatternsText} onSubmit={() => setStep(5)} />
              </box>
           )}
 
@@ -326,7 +309,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
                   <text>
                     <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Padrões:</span>
                   </text>
-                  <input value={patternsPath} focused onInput={setPatternsPath} onSubmit={(v: any) => handlePatternsPathSubmit(v)} />
+                  <input value={patternsPath} focused onChange={setPatternsPath} onSubmit={() => handlePatternsPathSubmit(patternsPath)} />
                  </>
                ) : (
                  <>
@@ -366,7 +349,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
                <text>
                  <span style={{ fg: "gray" }}>Digite ou cole o contexto (Enter para concluir):</span>
                </text>
-               <input value={contextText} focused onInput={setContextText} onSubmit={() => setStep(6)} />
+               <input value={contextText} focused onChange={setContextText} onSubmit={() => setStep(6)} />
              </box>
           )}
 
@@ -377,7 +360,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
                   <text>
                     <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Contexto:</span>
                   </text>
-                  <input value={contextPath} focused onInput={setContextPath} onSubmit={(v: any) => handleContextPathSubmit(v)} />
+                  <input value={contextPath} focused onChange={setContextPath} onSubmit={() => handleContextPathSubmit(contextPath)} />
                  </>
                ) : (
                  <>
@@ -402,7 +385,7 @@ export function NewPrompt({ config, onBack, onError }: Props) {
             <span style={{ fg: "cyan" }}>Escreva a instrucao principal do prompt:</span>
           </text>
           <box style={{ height: 1 }}>
-            <input value={instruction} focused onInput={setInstruction} onSubmit={(val: any) => handleGenerate(val)} />
+            <input value={instruction} focused onChange={setInstruction} onSubmit={() => handleGenerate(instruction)} />
           </box>
           <text>
             <span style={{ fg: "gray" }}>Ctrl+E para </span>

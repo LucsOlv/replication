@@ -52,5 +52,6 @@
     "noPrompts": "Nenhum prompt salvo encontrado.",
     "selectFormat": "Selecione o formato do prompt:",
     "selectTechniques": "Selecione as técnicas (Espaço para selecionar, Enter para confirmar):"
-  }
+  },
+  "defaultModel": "google/gemini-2.5-flash"
 }

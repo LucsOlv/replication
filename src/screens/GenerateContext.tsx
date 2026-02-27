@@ -9,13 +9,14 @@ import { LoadingBox, SuccessBox } from "../components/StatusBox";
 import { join } from "path";
 import { useKeyboard } from "@opentui/react";
 
+import { useAppStore } from "../store/useAppStore";
+
 interface Props {
-  config: AppConfig;
   onBack: () => void;
-  onError: (msg: string) => void;
 }
 
-export function GenerateContext({ config, onBack, onError }: Props) {
+export function GenerateContext({ onBack }: Props) {
+  const { config, setError } = useAppStore();
   const [projectPath, setProjectPath] = useState(process.cwd());
   const [step, setStep] = useState(1);
   const [files, setFiles] = useState<string[]>([]);
@@ -35,7 +36,7 @@ export function GenerateContext({ config, onBack, onError }: Props) {
       setFiles(res.value);
       setStep(2);
     } else {
-      onError(res.error.message);
+      setError(res.error.message);
     }
   };
 
@@ -43,7 +44,7 @@ export function GenerateContext({ config, onBack, onError }: Props) {
     setIsProcessing(true);
     const contentRes = await ContextService.getContextString(files);
     if (!contentRes.ok) {
-      onError(contentRes.error.message);
+      setError(contentRes.error.message);
       setIsProcessing(false);
       return;
     }
@@ -51,10 +52,12 @@ export function GenerateContext({ config, onBack, onError }: Props) {
     const prompt = `Analise os seguintes arquivos do projeto e gere um resumo de contexto util para outras interacoes com IA. Explique a estrutura, stack principal e proposito.\n\n${contentRes.value}`;
     const iaRes = await OpenRouterService.generate(prompt);
     if (!iaRes.ok) {
-      onError(iaRes.error.message);
+      setError(iaRes.error.message);
       setIsProcessing(false);
       return;
     }
+    
+    if (!config) return;
 
     const projectName = projectPath.split(/[\\/]/).pop() || "projeto";
     const filename = `contexto-${projectName}-${Date.now()}.md`;
@@ -62,7 +65,7 @@ export function GenerateContext({ config, onBack, onError }: Props) {
 
     const saveRes = await FileService.saveFile(outPath, iaRes.value);
     if (!saveRes.ok) {
-      onError(saveRes.error.message);
+      setError(saveRes.error.message);
     } else {
       setResultPath(outPath);
       setStep(3);

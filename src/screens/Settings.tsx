@@ -7,17 +7,18 @@ import { SuccessBox } from "../components/StatusBox";
 import { MenuSelect } from "../components/CustomSelect";
 import { useKeyboard } from "@opentui/react";
 
+import { useAppStore } from "../store/useAppStore";
+
 interface Props {
-  config: AppConfig;
   onBack: () => void;
-  onError: (msg: string) => void;
 }
 
-export function Settings({ config, onBack, onError }: Props) {
+export function Settings({ onBack }: Props) {
+  const { config, setError } = useAppStore();
   const [step, setStep] = useState(1);
-  const [apiKey, setApiKey] = useState(config.apiKey);
-  const [outputDir, setOutputDir] = useState(config.outputDir);
-  const [model, setModel] = useState(config.model);
+  const [apiKey, setApiKey] = useState(config?.apiKey || "");
+  const [outputDir, setOutputDir] = useState(config?.outputDir || "");
+  const [model, setModel] = useState(config?.model || "");
   const [saved, setSaved] = useState(false);
 
   useKeyboard((key) => {
@@ -29,8 +30,11 @@ export function Settings({ config, onBack, onError }: Props) {
     setModel(selectedModel);
     const newConfig = { apiKey, outputDir, model: selectedModel };
     const res = await ConfigService.save(newConfig);
-    if (res.ok) setSaved(true);
-    else onError(res.error.message);
+    if (res.ok) {
+      useAppStore.getState().loadInitialConfig();
+      setSaved(true);
+    }
+    else setError(res.error.message);
   };
 
   const stepLabels = ["API Key", "Pasta", "Modelo"];
