@@ -4,7 +4,7 @@ import { ConfigService } from "../services/ConfigService";
 import { join } from "path";
 import { homedir } from "os";
 
-type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "GenerateContext" | "ProjectPattern" | "Settings";
+type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "ViewLogs" | "GenerateContext" | "ProjectPattern" | "Settings";
 
 interface AppState {
     config: AppConfig | null;

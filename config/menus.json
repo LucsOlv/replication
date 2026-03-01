@@ -11,6 +11,11 @@
       "description": "Visualize todos os prompts salvos"
     },
     {
+      "label": "VER LOGS DO SISTEMA",
+      "value": "ViewLogs",
+      "description": "Visualize os logs de rastreabilidade da IA"
+    },
+    {
       "label": "GERAR CONTEXTO",
       "value": "GenerateContext",
       "description": "Gere contexto para seus prompts"

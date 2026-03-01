@@ -3,6 +3,7 @@ import { useAppStore } from "./store/useAppStore";
 import { MainMenu } from "./screens/MainMenu";
 import { NewPrompt } from "./screens/NewPrompt";
 import { ViewPrompts } from "./screens/ViewPrompts";
+import { ViewLogs } from "./screens/ViewLogs";
 import { Settings } from "./screens/Settings";
 import { GenerateContext } from "./screens/GenerateContext";
 import { ProjectPattern } from "./screens/ProjectPattern";
@@ -11,7 +12,7 @@ import { ErrorBox } from "./components/StatusBox";
 import { FileService } from "./services/FileService";
 import { join } from "path";
 
-type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "GenerateContext" | "ProjectPattern" | "Settings";
+type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "ViewLogs" | "GenerateContext" | "ProjectPattern" | "Settings";
 
 export default function App() {
   const { config, currentScreen, error, setCurrentScreen, loadInitialConfig } = useAppStore();
@@ -58,6 +59,8 @@ export default function App() {
         return <NewPrompt onBack={() => navigate("MainMenu")} />;
       case "ViewPrompts":
         return <ViewPrompts onBack={() => navigate("MainMenu")} />;
+      case "ViewLogs":
+        return <ViewLogs onBack={() => navigate("MainMenu")} />;
       case "Settings":
         return <Settings onBack={() => navigate("MainMenu")} />;
       case "GenerateContext":

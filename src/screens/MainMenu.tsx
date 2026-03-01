@@ -42,6 +42,7 @@ export function MainMenu({ onNavigate }: Props) {
     return [
       { name: "Gerar Novo Prompt", description: "Criar prompt com IA", value: "NewPrompt" },
       { name: "Ver Prompts Existentes", description: "Listar prompts salvos", value: "ViewPrompts" },
+      { name: "Ver Logs do Sistema", description: "Listar logs da IA", value: "ViewLogs" },
       { name: "Gerar Contexto", description: "Analise de projeto", value: "GenerateContext" },
       { name: "Gerar Padrao de Projeto", description: "Documentar padroes", value: "ProjectPattern" },
       { name: "Configuracoes", description: "API key, modelo, pasta", value: "Settings" },
