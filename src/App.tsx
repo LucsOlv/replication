@@ -7,12 +7,13 @@ import { ViewLogs } from "./screens/ViewLogs";
 import { Settings } from "./screens/Settings";
 import { GenerateContext } from "./screens/GenerateContext";
 import { ProjectPattern } from "./screens/ProjectPattern";
+import { VectorIndexScreen } from "./screens/VectorIndexScreen";
 import { Layout } from "./components/Layout";
 import { ErrorBox } from "./components/StatusBox";
 import { FileService } from "./services/FileService";
 import { join } from "path";
 
-type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "ViewLogs" | "GenerateContext" | "ProjectPattern" | "Settings";
+type Screen = "MainMenu" | "NewPrompt" | "ViewPrompts" | "ViewLogs" | "GenerateContext" | "ProjectPattern" | "VectorIndex" | "Settings";
 
 export default function App() {
   const { config, currentScreen, error, setCurrentScreen, loadInitialConfig } = useAppStore();
@@ -67,6 +68,8 @@ export default function App() {
         return <GenerateContext onBack={() => navigate("MainMenu")} />;
       case "ProjectPattern":
         return <ProjectPattern onBack={() => navigate("MainMenu")} />;
+      case "VectorIndex":
+        return <VectorIndexScreen onBack={() => navigate("MainMenu")} />;
       default:
         return <MainMenu onNavigate={navigate} />;
     }

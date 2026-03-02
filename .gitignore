@@ -1,2 +1,12 @@
 node_modules
 bun.lock
+
+# Environment variables
+.env
+
+# Vector index database
+.replication/*
+dist
+bin
+.agent
+.agents

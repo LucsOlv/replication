@@ -45,6 +45,14 @@
                 "Enter Avancar",
                 "Esc Voltar"
             ]
+        },
+        "VectorIndex": {
+            "title": "Indexacao Vetorial",
+            "help": [
+                "↑↓ Navegar",
+                "Enter Selecionar",
+                "Esc Voltar"
+            ]
         }
     }
 }

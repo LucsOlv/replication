@@ -71,7 +71,7 @@ export function MainMenu({ onNavigate }: Props) {
 
   return (
     <ScreenContainer title="Selecione uma opcao">
-      <CardSelect options={menus} onSelect={handleSelect} />
+      <CardSelect options={menus} onSelect={handleSelect} height={8} />
     </ScreenContainer>
   );
 }

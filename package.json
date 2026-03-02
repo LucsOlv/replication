@@ -3,16 +3,25 @@
   "version": "1.0.0",
   "description": "Replication TUI Generator",
   "main": "src/index.tsx",
+  "bin": {
+    "replication": "./bin/replication.js",
+    "replication.cmd": "./bin/replication.cmd"
+  },
   "scripts": {
     "start": "bun run src/index.tsx",
     "dev": "bun run --watch src/index.tsx",
-    "test": "bun test"
+    "test": "bun test",
+    "link": "bun link",
+    "unlink": "bun unlink"
   },
   "dependencies": {
     "@opentui/core": "^0.1.83",
     "@opentui/react": "^0.1.83",
+    "axios": "^1.13.6",
+    "cosine-similarity": "^1.0.1",
+    "p-queue": "^9.1.0",
     "react": "19",
-    "zod": "^3.22.4",
+    "zod": "^4.3.6",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

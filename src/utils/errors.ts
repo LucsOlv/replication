@@ -45,3 +45,11 @@ export class JsonParseError extends Error {
     this.name = "JsonParseError";
   }
 }
+
+export class EmbeddingError extends Error {
+  readonly type = "embedding";
+  constructor(message: string) {
+    super(message);
+    this.name = "EmbeddingError";
+  }
+}

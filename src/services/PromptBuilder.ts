@@ -5,7 +5,7 @@ import { BunFileError, OpenRouterError } from "../utils/errors";
 import { FileService } from "./FileService";
 import { TemplateService } from "./TemplateService";
 import { OpenRouterService } from "./OpenRouterService";
-import { LogService } from "./LogService";
+import { IncrementalLogService } from "./IncrementalLogService";
 
 export class PromptBuilder {
   static async build(
@@ -44,8 +44,8 @@ export class PromptBuilder {
 
     const composedPrompt = templateResult.value;
 
-    const interactionId = await LogService.logInfo("Montagem de Prompt", { task, instruction, format: format.id, techniques: techniques.map(t => t.id) });
-    await LogService.logInfo("Template Composto (Pré-IA)", { templateLength: composedPrompt.length, preview: composedPrompt.substring(0, 500) + "..." }, interactionId);
+    await IncrementalLogService.system("Montagem de Prompt", "PromptBuilder", { task, instruction, format: format.id, techniques: techniques.map(t => t.id) });
+    await IncrementalLogService.system("Template Composto (Pré-IA)", "PromptBuilder", { templateLength: composedPrompt.length, preview: composedPrompt.substring(0, 500) + "..." });
 
     // 2. Call AI to generate the final prompt
     const metaPrompt = `Você é um especialista em prompt engineering. Abaixo está um template estruturado com placeholders no formato {{PLACEHOLDER}}. Sua tarefa é:

@@ -26,6 +26,11 @@
       "description": "Analise e gere padrão do projeto"
     },
     {
+      "label": "INDEXAR ARQUIVOS",
+      "value": "VectorIndex",
+      "description": "Indexar e buscar arquivos semanticamente"
+    },
+    {
       "label": "CONFIGURAÇÕES",
       "value": "Settings",
       "description": "Ajuste as configurações da aplicação"
