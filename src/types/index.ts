@@ -4,6 +4,7 @@ export interface Technique {
   description: string;
   template?: string;
   sectionId?: string;
+  requiresInput?: boolean;
 }
 
 export interface Format {

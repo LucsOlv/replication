@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { usePromptStore } from "../store/usePromptStore";
-import { AppConfig, Format, Technique } from "../types";
+import { Technique } from "../types";
 import { FileService } from "../services/FileService";
 import { OpenRouterService } from "../services/OpenRouterService";
 import { ContextService } from "../services/ContextService";
+import { TemplateService } from "../services/TemplateService";
 import { PromptBuilder } from "../services/PromptBuilder";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { StepIndicator } from "../components/StepIndicator";
@@ -23,11 +24,13 @@ export function NewPrompt({ onBack }: Props) {
   const { config, setError } = useAppStore();
   const promptStore = usePromptStore();
 
+  // Local state to track if technique selection was confirmed
+  const [techniquesConfirmed, setTechniquesConfirmed] = useState(false);
+
   const {
     step, setStep,
     task, setTask,
     formats, setFormats,
-    format, setFormat,
     techniquesList, setTechniquesList,
     selectedTechs, setSelectedTechs,
     patternsMode, setPatternsMode,
@@ -42,12 +45,14 @@ export function NewPrompt({ onBack }: Props) {
     contextFiles, setContextFiles,
     instruction, setInstruction,
     isEnhancing, setIsEnhancing,
+    templatePreview, setTemplatePreview,
     isGenerating, setIsGenerating,
     generatedPrompt, setGeneratedPrompt,
     resultPath, setResultPath,
     resetPrompt
   } = promptStore;
 
+  // Load techniques at mount
   useEffect(() => {
     async function loadData() {
       const fResult = await FileService.readFile(join(process.cwd(), "config", "formats.json"));
@@ -60,33 +65,43 @@ export function NewPrompt({ onBack }: Props) {
 
   useKeyboard((key) => {
     if (key.name === "escape") {
-      // Allow escape from preview too
       resetPrompt();
+      setTechniquesConfirmed(false); // Reset on escape
       onBack();
     }
-    
-    // Patterns Enter reading mode
-    if (step === 4 && patternsMode === "read" && patternsFiles.length > 0 && !isProcessingPatterns) {
+
+    // Patterns Enter in reading mode
+    if (step === 2 && patternsMode === "read" && patternsFiles.length > 0 && !isProcessingPatterns) {
       if (key.name === "return") processPatternsWithAI();
     }
 
-    // Context Enter reading mode
-    if (step === 5 && contextMode === "read" && contextFiles.length > 0 && !isProcessingContext) {
+    // Context Enter in reading mode
+    if (step === 2 && contextMode === "read" && contextFiles.length > 0 && !isProcessingContext) {
       if (key.name === "return") processContextWithAI();
     }
 
-    if (step === 6 && key.ctrl && key.name === "e") {
+    // Enhance instruction with Ctrl+E
+    if (step === 3 && key.ctrl && key.name === "e") {
       handleEnhance();
     }
-    
-    // Preview step
-    if (step === 7) {
-      if (key.name === "return") handleSave();
-      if (key.name === "r") handleGenerate(instruction);
+
+    // Template Preview step - Enter to send to AI
+    if (step === 4 && key.name === "return" && !isGenerating) {
+      handleGenerate(instruction);
     }
 
-    if (step === 8 && key.name === "return") {
+    // Final Preview step - Enter to save, R to regenerate
+    if (step === 5 && key.name === "return" && !isGenerating) {
+      handleSave();
+    }
+    if (step === 5 && key.name === "r" && !isGenerating) {
+      handleGenerate(instruction);
+    }
+
+    // Success step
+    if (step === 6 && key.name === "return") {
       resetPrompt();
+      setTechniquesConfirmed(false);
       onBack();
     }
   });
@@ -98,6 +113,10 @@ export function NewPrompt({ onBack }: Props) {
     else setError(res.error.message);
     setIsEnhancing(false);
   };
+
+  // Check if user selected context or patterns techniques (recalculated on every render)
+  const hasContextTech = selectedTechs.some(t => t.id === "project_context");
+  const hasPatternsTech = selectedTechs.some(t => t.id === "project_patterns");
 
   // ----- PATTERNS LOGIC -----
   const handlePatternsPathSubmit = async (val: string) => {
@@ -124,7 +143,7 @@ export function NewPrompt({ onBack }: Props) {
     
     if (iaRes.ok) {
       setPatternsText(iaRes.value);
-      setStep(5);
+      setPatternsMode(null); // Reset mode after processing
     } else {
       setError(iaRes.error.message);
     }
@@ -156,33 +175,54 @@ export function NewPrompt({ onBack }: Props) {
     
     if (iaRes.ok) {
       setContextText(iaRes.value);
-      setStep(6);
+      setContextMode(null); // Reset mode after processing
     } else {
       setError(iaRes.error.message);
     }
     setIsProcessingContext(false);
   };
 
-  // ----- GENERATE & SAVE -----
+  // ----- GENERATE TEMPLATE PREVIEW -----
+  const handleGenerateTemplatePreview = async () => {
+    const finalPatterns = hasPatternsTech && patternsText ? patternsText : undefined;
+    const finalContext = hasContextTech && contextText ? contextText : undefined;
+
+    const res = await TemplateService.buildFromTechniques(
+      task,
+      instruction,
+      selectedTechs, // Include ALL selected techniques (including context/patterns)
+      finalPatterns,
+      finalContext
+    );
+    
+    if (res.ok) {
+      setTemplatePreview(res.value);
+      setStep(4); // Go to template preview
+    } else {
+      setError(res.error.message);
+    }
+  };
+
+  // ----- GENERATE FINAL PROMPT WITH AI -----
   const handleGenerate = async (finalInstruction: string) => {
     setInstruction(finalInstruction);
     setIsGenerating(true);
     
-    const finalPatterns = patternsMode !== "skip" ? patternsText : undefined;
-    const finalContext = contextMode !== "skip" ? contextText : undefined;
+    const finalPatterns = hasPatternsTech && patternsText ? patternsText : undefined;
+    const finalContext = hasContextTech && contextText ? contextText : undefined;
 
     const res = await PromptBuilder.build(
       task,
       finalInstruction,
-      format || formats[0],
-      selectedTechs,
+      formats[0], // Always XML now
+      selectedTechs, // Include ALL selected techniques (including context/patterns)
       finalPatterns,
       finalContext
     );
     
     if (res.ok) {
       setGeneratedPrompt(res.value);
-      setStep(7); // Go to preview
+      setStep(5); // Go to final preview
     } else {
       setError(res.error.message);
     }
@@ -196,30 +236,46 @@ export function NewPrompt({ onBack }: Props) {
     const res = await PromptBuilder.save(
       generatedPrompt,
       task,
-      format || formats[0],
+      formats[0], // Always XML now
       config.outputDir
     );
 
     if (res.ok) {
       setResultPath(res.value);
-      setStep(8);
+      setStep(6); // Go to success
     } else {
       setError(res.error.message);
     }
     setIsGenerating(false);
   };
 
-  const stepLabels = ["Tarefa", "Formato", "Tecnicas", "Padroes", "Contexto", "Instrucao", "Preview", "Concluido"];
+  const stepLabels = ["Tarefa", "Tecnicas", "Instrucao", "Template", "Preview", "Concluido"];
   const modeOptions = [
     { name: "⏭️ Pular", value: "skip", description: "Não adicionar esta seção" },
     { name: "📝 Informar manualmente", value: "manual", description: "Digitar ou colar texto livre" },
     { name: "📂 Ler do projeto", value: "read", description: "A IA analisa arquivos locais" }
   ];
 
-  return (
-    <ScreenContainer title="Criar Novo Prompt" showStep={{ current: step, total: 8 }}>
-      <StepIndicator current={step} total={8} labels={stepLabels} />
+  // Check if we need to show patterns or context input in step 2
+  // Logic: 
+  // 1. Show technique selection until user confirms with Enter
+  // 2. After confirmation, if patterns selected but not filled -> show patterns input
+  // 3. If patterns filled and context selected but not filled -> show context input  
+  // 4. If all needed inputs are filled -> show continue button
+  
+  const needsPatternsInput = hasPatternsTech && !patternsText;
+  const needsContextInput = hasContextTech && !contextText;
+  
+  const showTechniqueSelection = !techniquesConfirmed;
+  const showPatternsInput = techniquesConfirmed && needsPatternsInput;
+  const showContextInput = techniquesConfirmed && !needsPatternsInput && needsContextInput;
+  const allInputsComplete = techniquesConfirmed && !needsPatternsInput && !needsContextInput && (hasPatternsTech || hasContextTech);
 
+  return (
+    <ScreenContainer title="Criar Novo Prompt (XML)" showStep={{ current: step, total: 6 }}>
+      <StepIndicator current={step} total={6} labels={stepLabels} />
+
+      {/* STEP 1: Task */}
       {step === 1 && (
         <box flexDirection="column" gap={1}>
           <text>
@@ -233,159 +289,230 @@ export function NewPrompt({ onBack }: Props) {
               value={task}
               focused
               onChange={setTask}
-              onSubmit={() => setStep(2)}
+              onSubmit={() => {
+                setTechniquesConfirmed(false); // Reset when moving to step 2
+                setStep(2);
+              }}
             />
           </box>
         </box>
       )}
 
+      {/* STEP 2: Techniques (with context/patterns input if selected) */}
       {step === 2 && (
         <box flexDirection="column" gap={1}>
-          <text>
-            <span style={{ fg: "cyan" }}>Selecione o formato do prompt:</span>
-          </text>
-          <MenuSelect
-            options={formats.map((f) => ({
-              name: f.name,
-              description: f.description,
-              value: f.id,
-            }))}
-            onSelect={(item: any) => {
-              setFormat(formats.find((f) => f.id === item?.value) || formats[0]);
-              setStep(3);
-            }}
-          />
+          {showTechniqueSelection && (
+            <>
+              <text>
+                <span style={{ fg: "cyan" }}>Selecione as tecnicas:</span>
+              </text>
+              <text>
+                <span style={{ fg: "gray" }}>(Espaco para selecionar, Enter para confirmar)</span>
+              </text>
+              <box flexDirection="column" gap={0}>
+                <MultiSelect
+                  options={techniquesList.map(t => ({ 
+                    name: t.name, 
+                    description: t.description, 
+                    value: t.id 
+                  }))}
+                  selectedValues={selectedTechs.map(t => t.id)}
+                  onChange={(vals: string[]) => setSelectedTechs(techniquesList.filter(t => vals.includes(t.id)))}
+                  onSubmit={() => {
+                    // Mark techniques as confirmed
+                    setTechniquesConfirmed(true);
+                    
+                    // Check at submit time if context or patterns were selected
+                    const hasContext = selectedTechs.some(t => t.id === "project_context");
+                    const hasPatterns = selectedTechs.some(t => t.id === "project_patterns");
+                    
+                    // If neither context nor patterns selected, go to next step immediately
+                    if (!hasContext && !hasPatterns) {
+                      setStep(3);
+                    }
+                    // Otherwise, component will re-render and show input options
+                  }}
+                />
+              </box>
+            </>
+          )}
+
+          {/* PATTERNS INPUT */}
+          {showPatternsInput && (
+            <box flexDirection="column" gap={1}>
+              <text>
+                <span style={{ fg: "yellow" }}>Como deseja definir os PADRÕES do projeto?</span>
+              </text>
+              
+              {!patternsMode && (
+                <MenuSelect
+                  options={modeOptions}
+                  onSelect={(item: any) => {
+                    setPatternsMode(item?.value as InputMode);
+                    if (item?.value === "skip") {
+                      setPatternsText("(Nenhum padrão fornecido)");
+                    }
+                  }}
+                />
+              )}
+
+              {patternsMode === "manual" && (
+                 <box flexDirection="column" gap={1}>
+                   <text>
+                     <span style={{ fg: "gray" }}>Digite ou cole os padrões (Enter para concluir):</span>
+                   </text>
+                   <input 
+                     value={patternsText} 
+                     focused 
+                     onChange={setPatternsText} 
+                     onSubmit={() => setPatternsMode(null)} 
+                   />
+                 </box>
+              )}
+
+              {patternsMode === "read" && !isProcessingPatterns && (
+                 <box flexDirection="column" gap={1}>
+                   {patternsFiles.length === 0 ? (
+                     <>
+                      <text>
+                        <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Padrões:</span>
+                      </text>
+                      <input 
+                        value={patternsPath} 
+                        focused 
+                        onChange={setPatternsPath} 
+                        onSubmit={() => handlePatternsPathSubmit(patternsPath)} 
+                      />
+                     </>
+                   ) : (
+                     <>
+                      <text>
+                        <span style={{ fg: "green" }}>Encontrados {patternsFiles.length} arquivos.</span>
+                      </text>
+                      <text>
+                        <span style={{ fg: "gray" }}>Pressione Enter para usar a IA no mapeamento.</span>
+                      </text>
+                     </>
+                   )}
+                 </box>
+              )}
+
+              {isProcessingPatterns && <LoadingBox message="Lendo arquivos e gerando Padrões..." />}
+            </box>
+          )}
+
+          {/* CONTEXT INPUT */}
+          {!showPatternsInput && showContextInput && (
+            <box flexDirection="column" gap={1}>
+              <text>
+                <span style={{ fg: "yellow" }}>Como deseja definir o CONTEXTO do projeto?</span>
+              </text>
+              
+              {!contextMode && (
+                <MenuSelect
+                  options={modeOptions}
+                  onSelect={(item: any) => {
+                    setContextMode(item?.value as InputMode);
+                    if (item?.value === "skip") {
+                      setContextText("(Nenhum contexto fornecido)");
+                    }
+                  }}
+                />
+              )}
+
+              {contextMode === "manual" && (
+                 <box flexDirection="column" gap={1}>
+                   <text>
+                     <span style={{ fg: "gray" }}>Digite ou cole o contexto (Enter para concluir):</span>
+                   </text>
+                   <input 
+                     value={contextText} 
+                     focused 
+                     onChange={setContextText} 
+                     onSubmit={() => {
+                       setContextMode(null);
+                       setStep(3); // Move to next step after context
+                     }} 
+                   />
+                 </box>
+              )}
+
+              {contextMode === "read" && !isProcessingContext && (
+                 <box flexDirection="column" gap={1}>
+                   {contextFiles.length === 0 ? (
+                     <>
+                      <text>
+                        <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Contexto:</span>
+                      </text>
+                      <input 
+                        value={contextPath} 
+                        focused 
+                        onChange={setContextPath} 
+                        onSubmit={() => handleContextPathSubmit(contextPath)} 
+                      />
+                     </>
+                   ) : (
+                     <>
+                      <text>
+                        <span style={{ fg: "green" }}>Encontrados {contextFiles.length} arquivos.</span>
+                      </text>
+                      <text>
+                        <span style={{ fg: "gray" }}>Pressione Enter para usar a IA no mapeamento.</span>
+                      </text>
+                      <text>
+                        <span style={{ fg: "gray" }}>Após isso, avance para o próximo passo.</span>
+                      </text>
+                     </>
+                   )}
+                 </box>
+              )}
+
+              {isProcessingContext && <LoadingBox message="Lendo arquivos e gerando Contexto..." />}
+
+              {contextText && !isProcessingContext && (
+                <box flexDirection="column" gap={1}>
+                  <text>
+                    <span style={{ fg: "green" }}>Contexto definido! Pressione Enter para continuar.</span>
+                  </text>
+                  <input 
+                    value="" 
+                    focused 
+                    onSubmit={() => setStep(3)} 
+                  />
+                </box>
+              )}
+            </box>
+          )}
+
+          {/* Show continue button when all needed inputs are complete */}
+          {allInputsComplete && (
+            <box flexDirection="column" gap={1}>
+              <text>
+                <span style={{ fg: "green" }}>Técnicas configuradas! Pressione Enter para continuar.</span>
+              </text>
+              <input 
+                value="" 
+                focused 
+                onSubmit={() => setStep(3)} 
+              />
+            </box>
+          )}
         </box>
       )}
 
+      {/* STEP 3: Instruction */}
       {step === 3 && (
-        <box flexDirection="column" gap={1}>
-          <text>
-            <span style={{ fg: "cyan" }}>Selecione as tecnicas:</span>
-          </text>
-          <text>
-            <span style={{ fg: "gray" }}>(Espaco para selecionar, Enter para confirmar)</span>
-          </text>
-          <box flexDirection="column" gap={0}>
-            <MultiSelect
-              options={techniquesList.map(t => ({ name: t.name, description: t.description, value: t.id }))}
-              selectedValues={selectedTechs.map(t => t.id)}
-              onChange={(vals: string[]) => setSelectedTechs(techniquesList.filter(t => vals.includes(t.id)))}
-              onSubmit={() => setStep(4)}
-            />
-          </box>
-        </box>
-      )}
-
-      {step === 4 && (
-        <box flexDirection="column" gap={1}>
-          <text>
-            <span style={{ fg: "cyan" }}>Como deseja definir os PADRÕES do projeto?</span>
-          </text>
-          
-          {!patternsMode && (
-            <MenuSelect
-              options={modeOptions}
-              onSelect={(item: any) => {
-                setPatternsMode(item?.value as InputMode);
-                if (item?.value === "skip") setStep(5);
-              }}
-            />
-          )}
-
-          {patternsMode === "manual" && (
-             <box flexDirection="column" gap={1}>
-               <text>
-                 <span style={{ fg: "gray" }}>Digite ou cole os padrões (Enter para concluir):</span>
-               </text>
-               <input value={patternsText} focused onChange={setPatternsText} onSubmit={() => setStep(5)} />
-             </box>
-          )}
-
-          {patternsMode === "read" && !isProcessingPatterns && (
-             <box flexDirection="column" gap={1}>
-               {patternsFiles.length === 0 ? (
-                 <>
-                  <text>
-                    <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Padrões:</span>
-                  </text>
-                  <input value={patternsPath} focused onChange={setPatternsPath} onSubmit={() => handlePatternsPathSubmit(patternsPath)} />
-                 </>
-               ) : (
-                 <>
-                  <text>
-                    <span style={{ fg: "green" }}>Encontrados {patternsFiles.length} arquivos.</span>
-                  </text>
-                  <text>
-                    <span style={{ fg: "gray" }}>Pressione Enter para usar a IA no mapeamento.</span>
-                  </text>
-                 </>
-               )}
-             </box>
-          )}
-
-          {isProcessingPatterns && <LoadingBox message="Lendo arquivos e gerando Padrões..." />}
-        </box>
-      )}
-
-      {step === 5 && (
-        <box flexDirection="column" gap={1}>
-          <text>
-            <span style={{ fg: "cyan" }}>Como deseja definir o CONTEXTO do projeto?</span>
-          </text>
-          
-          {!contextMode && (
-            <MenuSelect
-              options={modeOptions}
-              onSelect={(item: any) => {
-                setContextMode(item?.value as InputMode);
-                if (item?.value === "skip") setStep(6);
-              }}
-            />
-          )}
-
-          {contextMode === "manual" && (
-             <box flexDirection="column" gap={1}>
-               <text>
-                 <span style={{ fg: "gray" }}>Digite ou cole o contexto (Enter para concluir):</span>
-               </text>
-               <input value={contextText} focused onChange={setContextText} onSubmit={() => setStep(6)} />
-             </box>
-          )}
-
-          {contextMode === "read" && !isProcessingContext && (
-             <box flexDirection="column" gap={1}>
-               {contextFiles.length === 0 ? (
-                 <>
-                  <text>
-                    <span style={{ fg: "yellow" }}>Caminho do projeto para buscar Contexto:</span>
-                  </text>
-                  <input value={contextPath} focused onChange={setContextPath} onSubmit={() => handleContextPathSubmit(contextPath)} />
-                 </>
-               ) : (
-                 <>
-                  <text>
-                    <span style={{ fg: "green" }}>Encontrados {contextFiles.length} arquivos.</span>
-                  </text>
-                  <text>
-                    <span style={{ fg: "gray" }}>Pressione Enter para usar a IA no mapeamento.</span>
-                  </text>
-                 </>
-               )}
-             </box>
-          )}
-
-          {isProcessingContext && <LoadingBox message="Lendo arquivos e gerando Contexto..." />}
-        </box>
-      )}
-
-      {step === 6 && !isGenerating && (
         <box flexDirection="column" gap={1}>
           <text>
             <span style={{ fg: "cyan" }}>Escreva a instrucao principal do prompt:</span>
           </text>
           <box style={{ height: 1 }}>
-            <input value={instruction} focused onChange={setInstruction} onSubmit={() => handleGenerate(instruction)} />
+            <input 
+              value={instruction} 
+              focused 
+              onChange={setInstruction} 
+              onSubmit={() => handleGenerateTemplatePreview()} 
+            />
           </box>
           <text>
             <span style={{ fg: "gray" }}>Ctrl+E para </span>
@@ -395,23 +522,78 @@ export function NewPrompt({ onBack }: Props) {
         </box>
       )}
 
-      {step === 6 && isGenerating && <LoadingBox message="Gerando prompt..." />}
-
-      {step === 7 && !isGenerating && (
-        <box flexDirection="column" gap={1} height="100%">
+      {/* STEP 4: Template Preview (before AI) */}
+      {step === 4 && !isGenerating && (
+        <box flexDirection="column" gap={1}>
           <text>
-            <span style={{ fg: "cyan" }}>Pré-visualização do prompt gerado:</span>
+            <span style={{ fg: "cyan" }}>Preview do Template XML (antes da IA preencher):</span>
           </text>
-          <box 
-            borderStyle="rounded" 
-            borderColor="gray" 
-            paddingX={1} 
-            flexGrow={1} 
-            height={10} 
-            overflow="hidden"
+          <text>
+            <span style={{ fg: "gray" }}>Revise o template. Pressione Enter para enviar para IA preencher.</span>
+          </text>
+          <scrollbox
+            focused
+            style={{
+              scrollbarOptions: {
+                showArrows: true,
+                trackOptions: {
+                  foregroundColor: "#58a6ff",
+                  backgroundColor: "#2d333b",
+                },
+              },
+            }}
+            height={15}
+            padding={1}
+            border
+            borderStyle="rounded"
+            borderColor="#58a6ff"
           >
-            <text>{generatedPrompt.substring(0, 1000) + (generatedPrompt.length > 1000 ? "\n... (cortado para visualizacao) ..." : "")}</text>
+            {templatePreview.split("\n").map((line, i) => (
+              <text key={i}>
+                <span style={{ fg: line.trim().startsWith("<!--") ? "gray" : "cyan" }}>
+                  {line || " "}
+                </span>
+              </text>
+            ))}
+          </scrollbox>
+          <box flexDirection="row" gap={2}>
+            <text><span style={{ fg: "green" }}>[ENTER]</span> <span style={{ fg: "gray" }}>Enviar para IA preencher</span></text>
+            <text><span style={{ fg: "red" }}>[ESC]</span> <span style={{ fg: "gray" }}>Cancelar</span></text>
           </box>
+        </box>
+      )}
+
+      {step === 4 && isGenerating && <LoadingBox message="Enviando template para IA preencher..." />}
+
+      {/* STEP 5: Final Preview (after AI) */}
+      {step === 5 && !isGenerating && (
+        <box flexDirection="column" gap={1}>
+          <text>
+            <span style={{ fg: "cyan" }}>Preview do Prompt XML Final (preenchido pela IA):</span>
+          </text>
+          <scrollbox
+            focused
+            style={{
+              scrollbarOptions: {
+                showArrows: true,
+                trackOptions: {
+                  foregroundColor: "#58a6ff",
+                  backgroundColor: "#2d333b",
+                },
+              },
+            }}
+            height={15}
+            padding={1}
+            border
+            borderStyle="rounded"
+            borderColor="green"
+          >
+            {generatedPrompt.split("\n").map((line, i) => (
+              <text key={i}>
+                <span style={{ fg: "white" }}>{line || " "}</span>
+              </text>
+            ))}
+          </scrollbox>
           <box flexDirection="row" gap={2}>
             <text><span style={{ fg: "green" }}>[ENTER]</span> <span style={{ fg: "gray" }}>Aprovar e Salvar</span></text>
             <text><span style={{ fg: "yellow" }}>[R]</span> <span style={{ fg: "gray" }}>Regenerar</span></text>
@@ -420,10 +602,11 @@ export function NewPrompt({ onBack }: Props) {
         </box>
       )}
 
-      {step === 7 && isGenerating && <LoadingBox message="Salvando prompt gerado..." />}
+      {step === 5 && isGenerating && <LoadingBox message="Gerando prompt com IA..." />}
 
-      {step === 8 && (
-        <SuccessBox message="Prompt salvo com sucesso!">
+      {/* STEP 6: Success */}
+      {step === 6 && (
+        <SuccessBox message="Prompt XML salvo com sucesso!">
           <text>
             <span style={{ fg: "cyan" }}>{resultPath}</span>
           </text>

@@ -14,6 +14,8 @@ const SECTION_TAG_MAP: Record<string, string> = {
     self_consistency: "self_consistency",
     react_loop: "react_loop",
     maieutic_prompting: "maieutic_prompting",
+    project_context: "project_context",
+    project_patterns: "project_patterns",
 };
 
 // Sections that are ALWAYS included in the generated template
@@ -78,7 +80,17 @@ export class TemplateService {
 
             const tag = SECTION_TAG_MAP[sectionId];
             if (tag && allSections.has(tag)) {
-                selectedParts.push(allSections.get(tag)!);
+                let section = allSections.get(tag)!;
+                
+                // Replace context or patterns placeholders if provided
+                if (sectionId === "project_context" && context) {
+                    section = section.replace("{{CONTEXTO_DO_PROJETO}}", context);
+                }
+                if (sectionId === "project_patterns" && patterns) {
+                    section = section.replace("{{PADROES_DO_PROJETO}}", patterns);
+                }
+                
+                selectedParts.push(section);
             }
         }
 
@@ -89,16 +101,7 @@ export class TemplateService {
             }
         }
 
-        // 3. Add Context and Patterns if available
-        if (patterns) {
-            selectedParts.push(`<project_patterns>\n${patterns}\n</project_patterns>`);
-        }
-
-        if (context) {
-            selectedParts.push(`<project_context>\n${context}\n</project_context>`);
-        }
-
-        // 4. Compose the final XML
+        // 3. Compose the final XML
         const composedXml = `<?xml version="1.0" encoding="UTF-8"?>
 <prompt version="1.0" name="${projectName}">
 
@@ -107,54 +110,10 @@ ${selectedParts.join("\n\n")}
 </prompt>
 `;
 
-        // 5. Replace the task description placeholder
+        // 4. Replace the task description placeholder
         const finalXml = composedXml.replace("{{TITULO_DA_TAREFA}}", taskDescription);
 
         return ok(finalXml);
     }
-
-    /**
-     * Builds a Markdown version of the template for non-XML formats.
-     * Converts the XML sections into readable markdown headings.
-     */
-    static buildMarkdownFromTechniques(
-        projectName: string,
-        taskDescription: string,
-        techniques: Technique[],
-        patterns?: string,
-        context?: string
-    ): string {
-        const parts: string[] = [];
-
-        parts.push(`# ${projectName}\n`);
-
-        // Add technique sections as markdown
-        for (const tech of techniques) {
-            parts.push(`## ${tech.name}\n`);
-            parts.push(`${tech.template || tech.description}\n`);
-        }
-
-        // Add Context and Patterns if available
-        if (patterns) {
-            parts.push(`## Padrões do Projeto\n`);
-            parts.push(`${patterns}\n`);
-        }
-
-        if (context) {
-            parts.push(`## Contexto do Projeto\n`);
-            parts.push(`${context}\n`);
-        }
-
-        // Add fixed sections
-        parts.push(`## Tarefa Principal\n`);
-        parts.push(`${taskDescription}\n`);
-
-        parts.push(`## Constraints\n`);
-        parts.push(`Defina as regras inegociáveis do projeto.\n`);
-
-        parts.push(`## Output Esperado\n`);
-        parts.push(`Defina o formato e critérios de qualidade da entrega.\n`);
-
-        return parts.join("\n");
-    }
 }
+

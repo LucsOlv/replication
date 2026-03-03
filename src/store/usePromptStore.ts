@@ -27,6 +27,7 @@ interface PromptState {
     instruction: string;
     isEnhancing: boolean;
 
+    templatePreview: string;
     isGenerating: boolean;
     generatedPrompt: string;
     resultPath: string;
@@ -53,6 +54,7 @@ interface PromptState {
     setInstruction: (instruction: string) => void;
     setIsEnhancing: (enhancing: boolean) => void;
 
+    setTemplatePreview: (template: string) => void;
     setIsGenerating: (generating: boolean) => void;
     setGeneratedPrompt: (prompt: string) => void;
     setResultPath: (path: string) => void;
@@ -79,6 +81,7 @@ const initialState = {
     contextFiles: [],
     instruction: "",
     isEnhancing: false,
+    templatePreview: "",
     isGenerating: false,
     generatedPrompt: "",
     resultPath: "",
@@ -109,6 +112,7 @@ export const usePromptStore = create<PromptState>((set) => ({
     setInstruction: (instruction) => set({ instruction }),
     setIsEnhancing: (isEnhancing) => set({ isEnhancing }),
 
+    setTemplatePreview: (templatePreview) => set({ templatePreview }),
     setIsGenerating: (isGenerating) => set({ isGenerating }),
     setGeneratedPrompt: (generatedPrompt) => set({ generatedPrompt }),
     setResultPath: (resultPath) => set({ resultPath }),

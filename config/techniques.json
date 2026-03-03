@@ -54,5 +54,21 @@
     "description": "Valida e justifica as próprias afirmações.",
     "template": "Antes de finalizar, valide e justifique por que as decisões tomadas atendem a todos os requisitos e regras propostas.",
     "sectionId": "maieutic_prompting"
+  },
+  {
+    "id": "project_context",
+    "name": "Contexto do Projeto",
+    "description": "Adiciona informações sobre a estrutura e propósito do projeto.",
+    "template": "Inclui contexto sobre a stack principal, arquitetura e objetivos do projeto.",
+    "sectionId": "project_context",
+    "requiresInput": true
+  },
+  {
+    "id": "project_patterns",
+    "name": "Padrões do Projeto",
+    "description": "Define padrões arquiteturais e boas práticas do projeto.",
+    "template": "Documenta padrões de código, arquitetura e convenções adotadas.",
+    "sectionId": "project_patterns",
+    "requiresInput": true
   }
 ]

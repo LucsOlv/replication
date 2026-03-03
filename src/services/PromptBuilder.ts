@@ -17,26 +17,14 @@ export class PromptBuilder {
     context?: string
   ): Promise<Result<string, BunFileError | OpenRouterError | Error>> {
 
-    interface FormatStrategy {
-      build(task: string, instruction: string, techniques: Technique[], patterns?: string, context?: string): Promise<Result<string, Error>> | Result<string, Error>;
-    }
-
-    const formatStrategies: Record<string, FormatStrategy> = {
-      xml: {
-        build: async (t, i, tech, p, c) => {
-          return await TemplateService.buildFromTechniques(t, i, tech, p, c);
-        }
-      },
-      markdown: {
-        build: (t, i, tech, p, c) => {
-          const result = TemplateService.buildMarkdownFromTechniques(t, i, tech, p, c);
-          return ok(result);
-        }
-      }
-    };
-
-    const strategy = formatStrategies[format.id] || formatStrategies["markdown"];
-    const templateResult = await strategy.build(task, instruction, techniques, patterns, context);
+    // Build XML template from selected techniques only
+    const templateResult = await TemplateService.buildFromTechniques(
+      task, 
+      instruction, 
+      techniques, 
+      patterns, 
+      context
+    );
 
     if (!templateResult.ok) {
       return err(templateResult.error);
@@ -44,21 +32,33 @@ export class PromptBuilder {
 
     const composedPrompt = templateResult.value;
 
-    await IncrementalLogService.system("Montagem de Prompt", "PromptBuilder", { task, instruction, format: format.id, techniques: techniques.map(t => t.id) });
-    await IncrementalLogService.system("Template Composto (Pré-IA)", "PromptBuilder", { templateLength: composedPrompt.length, preview: composedPrompt.substring(0, 500) + "..." });
+    await IncrementalLogService.system("Montagem de Prompt", "PromptBuilder", { 
+      task, 
+      instruction, 
+      format: format.id, 
+      techniques: techniques.map(t => t.id) 
+    });
+    await IncrementalLogService.system("Template Composto (Pré-IA)", "PromptBuilder", { 
+      templateLength: composedPrompt.length, 
+      preview: composedPrompt.substring(0, 500) + "..." 
+    });
 
-    // 2. Call AI to generate the final prompt
-    const metaPrompt = `Você é um especialista em prompt engineering. Abaixo está um template estruturado com placeholders no formato {{PLACEHOLDER}}. Sua tarefa é:
+    // Call AI to fill the template with ONLY what was specified
+    const metaPrompt = `Você é um especialista em prompt engineering. Sua tarefa é:
 
-1. Ler o template e a descrição da tarefa do usuário
-2. Preencher TODOS os placeholders {{...}} com conteúdo relevante e profissional baseado na tarefa descrita
-3. Manter a estrutura e formato do template (${format.id.toUpperCase()})
-4. Remover comentários do template (<!-- ... -->)
-5. Retornar APENAS o prompt final preenchido, sem explicações
+1. Ler o template XML estruturado abaixo com placeholders {{PLACEHOLDER}}
+2. Preencher APENAS os placeholders com base na instrução do usuário
+3. Use SOMENTE as técnicas e seções presentes no template - NÃO adicione técnicas extras
+4. NÃO crie passos ou seções adicionais além do que foi fornecido
+5. Remover comentários XML (<!-- ... -->)
+6. Manter a estrutura XML intacta
+7. Retornar APENAS o XML final preenchido, sem explicações
 
-TAREFA DO USUÁRIO: ${instruction}
+IMPORTANTE: Seja objetivo e preencha apenas o necessário baseado na instrução. Se um placeholder não for relevante para a tarefa, use um valor genérico mínimo.
 
-TEMPLATE A PREENCHER:
+INSTRUÇÃO DO USUÁRIO: ${instruction}
+
+TEMPLATE XML:
 ${composedPrompt}`;
 
     const aiResult = await OpenRouterService.generate(metaPrompt);
@@ -77,7 +77,7 @@ ${composedPrompt}`;
   ): Promise<Result<string, BunFileError | Error>> {
     const slug = task.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const timestamp = Date.now();
-    const ext = format.id === "xml" ? "xml" : (format.id === "markdown" ? "md" : "txt");
+    const ext = "xml"; // Always XML now
     const filename = `${slug || 'prompt'}-${timestamp}.${ext}`;
     const filePath = join(outputDir, filename);
 

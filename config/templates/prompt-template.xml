@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt version="1.0" name="{{NOME_DO_PROJETO}}">
+
+  <!-- ROLE PROMPTING -->
+  <role>
+    <persona>{{DESCRICAO_DA_PERSONA}}</persona>
+    <expertise>
+      <item>{{ESPECIALIDADE_1}}</item>
+      <item>{{ESPECIALIDADE_2}}</item>
+    </expertise>
+    <behavior>{{COMPORTAMENTO_ESPERADO}}</behavior>
+  </role>
+
+  <!-- GENERATED KNOWLEDGE -->
+  <generated_knowledge>
+    <instruction>
+      Antes de {{ACAO_PRINCIPAL}}, consolide o seguinte conhecimento:
+    </instruction>
+    <knowledge_blocks>
+      <block id="K1" topic="{{TOPICO_1}}">
+        {{CONHECIMENTO_1}}
+      </block>
+      <block id="K2" topic="{{TOPICO_2}}">
+        {{CONHECIMENTO_2}}
+      </block>
+    </knowledge_blocks>
+  </generated_knowledge>
+
+  <!-- FEW-SHOT EXAMPLES -->
+  <few_shot_examples>
+    <example id="E1" label="{{LABEL_EXEMPLO_1}}">
+      <input>{{ENTRADA_1}}</input>
+      <output>{{SAIDA_1}}</output>
+    </example>
+    <example id="E2" label="{{LABEL_EXEMPLO_2}}">
+      <input>{{ENTRADA_2}}</input>
+      <output>{{SAIDA_2}}</output>
+    </example>
+  </few_shot_examples>
+
+  <!-- CHAIN OF THOUGHT -->
+  <chain_of_thought>
+    <instruction>
+      Antes de {{ACAO_PRINCIPAL}}, siga estas etapas:
+    </instruction>
+    <steps>
+      <step order="1">{{STEP_1}}: {{DESCRICAO_STEP_1}}</step>
+      <step order="2">{{STEP_2}}: {{DESCRICAO_STEP_2}}</step>
+      <step order="3">{{STEP_3}}: {{DESCRICAO_STEP_3}}</step>
+      <step order="final">{{ACAO_FINAL}}</step>
+    </steps>
+  </chain_of_thought>
+
+  <!-- TREE OF THOUGHTS -->
+  <tree_of_thoughts>
+    <instruction>
+      Para as decisões abaixo, explore 3 abordagens e escolha a melhor:
+    </instruction>
+    <decision_points>
+      <decision id="D1" question="{{PERGUNTA_1}}">
+        <branch id="B1">{{ABORDAGEM_1}}</branch>
+        <branch id="B2">{{ABORDAGEM_2}}</branch>
+        <branch id="B3">{{ABORDAGEM_3}}</branch>
+        <evaluate>{{CRITERIO_AVALIACAO}}</evaluate>
+      </decision>
+    </decision_points>
+  </tree_of_thoughts>
+
+  <!-- SELF-CONSISTENCY -->
+  <self_consistency>
+    <instruction>
+      Para {{COMPONENTE_CRITICO}}, gere 3 versões e entregue a melhor:
+      - {{CRITERIO_1}}
+      - {{CRITERIO_2}}
+      - {{CRITERIO_3}}
+    </instruction>
+  </self_consistency>
+
+  <!-- REACT LOOP -->
+  <react_loop>
+    <instruction>
+      Para cada tarefa, execute: Thought → Action → Observation → Final Answer
+    </instruction>
+    <tasks>
+      <task id="T1" name="{{TAREFA_1}}">
+        <thought>{{RACIOCINIO_INICIAL}}</thought>
+        <action>{{PRIMEIRA_ACAO}}</action>
+        <observation>{{O_QUE_VERIFICAR}}</observation>
+        <final>{{ENTREGAVEL_FINAL}}</final>
+      </task>
+    </tasks>
+  </react_loop>
+
+  <!-- MAIEUTIC PROMPTING -->
+  <maieutic_prompting>
+    <instruction>
+      Antes de finalizar, valide cada afirmação:
+    </instruction>
+    <validations>
+      <validate claim="{{AFIRMACAO_1}}">
+        {{PERGUNTA_VALIDACAO_1}}
+      </validate>
+      <validate claim="{{AFIRMACAO_2}}">
+        {{PERGUNTA_VALIDACAO_2}}
+      </validate>
+    </validations>
+  </maieutic_prompting>
+
+  <!-- PROJECT CONTEXT -->
+  <project_context>
+    {{CONTEXTO_DO_PROJETO}}
+  </project_context>
+
+  <!-- PROJECT PATTERNS -->
+  <project_patterns>
+    {{PADROES_DO_PROJETO}}
+  </project_patterns>
+
+  <!-- TAREFA PRINCIPAL -->
+  <task>
+    <title>{{TITULO_DA_TAREFA}}</title>
+    <description>{{DESCRICAO_DETALHADA}}</description>
+    
+    <project_structure>
+      <file path="{{ARQUIVO_1}}">{{DESC_ARQUIVO_1}}</file>
+      <file path="{{ARQUIVO_2}}">{{DESC_ARQUIVO_2}}</file>
+    </project_structure>
+
+    <components>
+      <component name="{{COMPONENTE_1}}">
+        {{DESC_COMPONENTE_1}}
+      </component>
+      <component name="{{COMPONENTE_2}}">
+        {{DESC_COMPONENTE_2}}
+      </component>
+    </components>
+
+    <core_logic>
+      <description>{{LOGICA_CENTRAL}}</description>
+      <rules>
+        <rule>{{REGRA_1}}</rule>
+        <rule>{{REGRA_2}}</rule>
+      </rules>
+    </core_logic>
+  </task>
+
+  <!-- ERROR HANDLING PATTERN -->
+  <error_handling_pattern>
+    <philosophy>{{FILOSOFIA_DE_ERROS}}</philosophy>
+    <rules>
+      <rule id="ERR1">{{REGRA_ERRO_1}}</rule>
+      <rule id="ERR2">{{REGRA_ERRO_2}}</rule>
+    </rules>
+    <validation>{{VALIDACAO_ERROS}}</validation>
+  </error_handling_pattern>
+
+  <!-- CONSTRAINTS -->
+  <constraints>
+    <rule>{{CONSTRAINT_1}}</rule>
+    <rule>{{CONSTRAINT_2}}</rule>
+    <rule>{{CONSTRAINT_3}}</rule>
+  </constraints>
+
+  <!-- EXPECTED OUTPUT -->
+  <expected_output>
+    <format>{{FORMATO_ENTREGA}}</format>
+    <quality_bar>
+      <criterion>{{CRITERIO_QUALIDADE_1}}</criterion>
+      <criterion>{{CRITERIO_QUALIDADE_2}}</criterion>
+      <criterion>{{CRITERIO_QUALIDADE_3}}</criterion>
+    </quality_bar>
+  </expected_output>
+
+</prompt>
